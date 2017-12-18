@@ -1,0 +1,8 @@
+F90 = mpif90
+FFLAGS += -O3 # -check all -check bounds
+#FFLAGS += -O3 -g -fbacktrace # -check all -check bounds
+FPPFLAGS = -DMPI
+FINCLUDE += -I/usr/local/include
+LD = $(F90)
+LDFLAGS += -lhdf5 -lhdf5_fortran -lhdf5hl_fortran -llapack  #-limf
+#LDINCLUDE += -L/opt/sw/x86_64/glibc-2.12/ivybridge-ep/hdf5/1.8.12/intel-14.0.2/lib -L/cm/shared/apps/intel/composer_xe_2015.2.164/mkl/lib/intel64

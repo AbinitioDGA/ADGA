@@ -1,0 +1,43 @@
+[General]
+calc-susc = T
+calc-eom  = T
+
+# Number of atoms
+NAt = 1
+
+# Frequency boxes
+N4iwf = -1 # full box
+N4iwb = -1 # full box
+
+# General Files
+HkFile = srvo3_k20.hk
+VqFile = 
+QDataFile = 
+UFile = 
+
+# Hamiltonian (k) & Calculation (q) grid
+k-grid = 20 20 20
+q-grid = 20 20 20
+
+# Output folder gets created on execution
+Output = output/
+
+[Atoms]
+[[1]]
+Interaction = Kanamori
+Nd = 3
+Udd = 5.0
+Vdd = 3.5
+Jdd = 0.75
+
+[One-Particle]
+1PFile = srvo3-1pg.hdf5
+orb-sym = T
+
+[Two-Particle]
+2PFile = srvo3-2pg-symmetrized.hdf5
+vertex-type = 0 # 0: 2PGF, 1: chi_con, 2: chi
+
+[Output]
+gzip-compression = 8
+text-output = F

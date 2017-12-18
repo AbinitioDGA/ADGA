@@ -1,0 +1,49 @@
+.*
+*~
+
+*.mod
+*.o
+*.slrm
+*.log
+*.conf
+*.btr
+*.out
+*.qp
+*.dat
+*.png
+*.hdf5
+*.hk
+*.dSYM
+!testsuit/Tests/*_data/*.hdf5
+!testsuit/Tests/*_data/*.hk
+
+#Ignore the make_config
+make_config
+bin/
+
+#Test suit
+testsuit/runcommand
+
+#ctags
+tags
+
+# configfiles and templates
+config*
+# except config_template which is maintained by hand
+!config_example_eom
+!config_example_susc_qpath
+!configspec
+
+# dont't forget about the module
+!config_module.f90
+
+# all possible output folder and everything inside
+Output*/**
+output*/**
+# all possible input folder and everything inside
+Input*/**
+input*/**
+
+# binaries
+abinitiodga
+vertex_chann_sym

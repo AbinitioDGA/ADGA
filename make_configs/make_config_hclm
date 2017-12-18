@@ -1,0 +1,13 @@
+# for HCLM
+LDFLAGS += -I/opt/hdf5-1.8.16_gcc/include/
+LDFLAGS += -L/opt/hdf5-1.8.16_gcc/lib/
+
+F90 = mpif90 # for hclm
+FFLAGS += -O3  -ffree-line-length=256 # this compiler doesnt like long lines
+#FFLAGS += -O3 -g -fbacktrace
+FPPFLAGS = -DMPI
+FINCLUDE += -I/opt/hdf5-1.8.16_gcc/include/
+LD = $(F90)
+LDFLAGS += -lhdf5_fortran -lhdf5hl_fortran #-lmkl_rt  #-limf
+LDFLAGS += -lhdf5_fortran -lhdf5hl_fortran -llapack -lblas -limf
+LDINCLUDE += -L/opt/hdf5-1.8.16_gcc/lib/

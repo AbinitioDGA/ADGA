@@ -1,43 +1,41 @@
 [General]
+# calculate the momentum-dependent susceptibilities
 calc-susc = T
-calc-eom  = F # eom and QDataFile doesnt work together
+calc-eom  = F # must be turned off for q-path calculation
 
-# Number of atoms
-NAt = 1
+NAt = 1 # Number of atoms
 
-# Frequency boxes
-N4iwf = -1 # full box
-N4iwb = -1 # full box
+# number of positive f/b frequencies used form the vertex
+N4iwf = -1 # full fermionic box
+N4iwb = 0 # only at w=0
 
 # General Files
-HkFile = srvo3_k20.hk
-VqFile = 
+HkFile = srvo3_k20.hk # Wannier Hamiltonian
+
+k-grid = 20 20 20 # Wannier Hamiltonian and eom grid -- must be fixed at all times
+# q-grid = 20 20 20 -- this gets ignored if we run with QDataFile
+
 QDataFile = qpath_template
-UFile = 
+# this file can be found in documentation/examples/qpath_template
 
-# Hamiltonian (k) - no q-grid required since we calculate with q-points
-k-grid = 20 20 20
+Output = output-qpath
 
-# Output folder gets created on execution
-Output = output/
-
-[Atoms]
+[Atoms] # fully local interaction parameters
 [[1]]
 Interaction = Kanamori
-Nd = 3
+Nd = 3 # number of d-bands
+Np = 0 # number of p-bands
 Udd = 5.0
 Vdd = 3.5
 Jdd = 0.75
 
 [One-Particle]
-1PFile = srvo3-1pg.hdf5
+1PFile = srvo3-1pg.hdf5 # DMFT 1PG
 orb-sym = T
 
 [Two-Particle]
-2PFile = srvo3-2pg-symmetrized.hdf5
+2PFile = srvo3-2pg-symmetrized.hdf5 # symmetrized vertex
 vertex-type = 0 # 0: 2PGF, 1: chi_con, 2: chi
 
 [Output]
-gzip-compression = 0
-susc-full-output = T # all 4 legs
-text-output = F
+text-output = T # additionally output the data in form of text-files

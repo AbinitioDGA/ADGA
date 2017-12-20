@@ -1,14 +1,14 @@
 ________________________________________________________________________________
 [General]
-calc-susc = (default = F)             # calculate momentum-dependent susceptiblities
+calc-susc = (default = T)             # calculate momentum-dependent susceptiblities
 calc-eom  = (default = T)             # calculate equation of motion -> self-energy
 NAt       = (default = 1)             # number of atoms
 N4iwf     = (default = -1)            # number of fermionic frequencies of the vertex (v,v')
-                                      # number <= 0 and >= max ---> maximum box size
+                                      # number <= 0 or >= max ---> maximum box size
                                       # 1 -> frequencies: [-pi/beta, pi/beta]
                                       # 2 -> frequencies: [-3pi/beta, -pi/beta, pi/beta, 3pi/beta]
 N4iwb     = (default = -1)            # number of bosonic frequencies of the vertex (w)
-                                      # number < 0 and >= max  ---> maximum box size
+                                      # number < 0 or >= max  ---> maximum box size
                                       # 0 -> frequencies: [0]
                                       # 1 -> frequencies: [-2*pi/beta, 0, 2*pi/beta]
  _________________________________________________________________
@@ -57,7 +57,7 @@ Jdp = (default = 0)
 ________________________________________________________________________________
 [One-Particle]
 1PFile =  (default = '')              # file of the w2dynamics 1 particle greens function - mandatory
-orb-sym = (default = F)               # orbital symmetry
+orb-sym = (default = F)               # orbital symmetry - symmetrization over bands of the DMFT Greens function and self-energy
 dmft-iter = (default = 'dmft-last')   # hdf5 group name of w2dynamics DMFT iteration
 
 ________________________________________________________________________________
@@ -81,8 +81,9 @@ gzip-compression = (default = 4)      # gzip compression level in the hdf5 outpu
 text-output = (default = F)           # default output only produces the hdf5 data output
                                  
 ________________________________________________________________________________
-[Verbose]                             # ignore this 
-verbstr
+[Verbose]                             # Verbose flag (Add keywords to produce more output)
+                                      # Current verbose keywords: Output, Extra, Umatrix, Time, Kpoints, Noprogress, Test, Mpi, Dmft
 ________________________________________________________________________________
-[Debug]                               # ignore this
-dbgstr
+[Debug]                               # Debug flag (Add keywords to change the way the calculation is performed, i.e. "Experts Only")
+                                      # Current debug keywords: Onlydmft, Bubble, Dmft_phbar, Makegiw
+

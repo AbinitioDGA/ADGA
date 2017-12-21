@@ -1,6 +1,7 @@
 ! This file is part of the Abinitio Dynamical Vertex Approximation (ADGA)
-! package. It's an electronic structure code which allows the inclusion of
-! non-local correlations beyond DMFT.
+! package. It is an electronic structure code which allows the inclusion of
+! non-local correlations beyond DMFT and the calculation of momentum-dependent
+! susceptibilities.
 !
 ! The public repository can be found at
 ! https://github.com/AbinitioDGA/ADGA
@@ -9,7 +10,8 @@
 ! https://arxiv.org/abs/1710.06651
 !
 ! Copyright (C) <2017, 2018> 
-! <Anna Galler, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
+! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
+! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
 ! This program is free software; you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -22,8 +24,7 @@
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with this program; if not, write to the Free Software Foundation,
-! Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module lookup_module
   use parameters_module

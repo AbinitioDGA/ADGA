@@ -1,6 +1,7 @@
 # Abinitio DGA
                                                                                                                                                                        
-AbinitioDGA is an implementation of a DGA approach for electronic structure calculations of materials. It allows the inclusion of non-local correlations beyond DMFT.
+AbinitioDGA is an implementation of a DGA approach for electronic structure calculations of materials.   
+It allows the inclusion of non-local correlations beyond DMFT and the calculation of momentum-dependent susceptibilities.
 
 ## Getting Started
 
@@ -35,7 +36,9 @@ These packages are however not necessary for the purely computational part of AD
 The test data and results within ADGA for our usual testbed SrVO3 (strongly correlated metal) can be found in **srvo3-testdata/** and **documentation/README.pdf** respectively.
 
 ## Authors
-Anna Galler, Patrik Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak and Karsten Held.
+Anna Galler\*, Patrik Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak and Karsten Held.
+
+\* Corresponding author. E-mail address: galler.anna@gmail.com
 
 ## License
 This project is licensed under the GNU General Public License v3 which can be found in **LICENSE**.
@@ -47,8 +50,13 @@ This project is licensed under the GNU General Public License v3 which can be fo
 
 [Towards ab initio Calculations with the Dynamical Vertex Approximation - arXiv](https://arxiv.org/abs/1709.02663)
 
+
+If you use this package please cite the following paper:   
 [The AbinitioDGA Project v1.0: Non-local correlations beyond and susceptibilities within dynamical mean-field-theory - arXiv](https://arxiv.org/abs/1710.06651)
+
 
 ## Acknowledgments
 
 This project has been supported by European Research Council under the European Union's Seventh Framework Program (FP/2007-2013) through Grant agreement No. 306447.
+
+![ERC](https://erc.europa.eu/sites/default/files/LOGO_ERC-FLAG_EU_.jpg)

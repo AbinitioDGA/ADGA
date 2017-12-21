@@ -1,6 +1,6 @@
 # Abinitio DGA
                                                                                                                                                                        
-AbinitioDGA is an implementation of a DGA approach for electronic structure calculations of materials.
+AbinitioDGA is an implementation of a DGA approach for electronic structure calculations of materials. It allows the inclusion of non-local correlations beyond DMFT.
 
 ## Getting Started
 
@@ -28,11 +28,11 @@ The default output of ADGA is a partially compressed HDF5 file. For that reason 
 * scipy
 * matplotlib
 
-These packages are however not necessary for the purely computational part of ADGA. If one does not want to deal with Python it is still possible to output all data in form of text-files (see **documentation/configspec**).
+These packages are however not necessary for the purely computational part of ADGA. If one does not want to deal with Python it is still possible to output all data in form of text-files (see **documentation/configspec**). The instructions in **documentation/python\_intro.pdf** and the scripts found in **documentation/scripts/** provide a first starting point for extracting data and making plots.
 
 ## Test Case SrVO3
 
-The test data and results within ADGA for our usual testbed SrVO3 (strongly correlated metal) will be provided in the near future.
+The test data and results within ADGA for our usual testbed SrVO3 (strongly correlated metal) can be found in **srvo3-testdata/** and **documentation/README.pdf** respectively.
 
 ## Authors
 Anna Galler, Patrik Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak and Karsten Held.
@@ -47,8 +47,7 @@ This project is licensed under the GNU General Public License v3 which can be fo
 
 [Towards ab initio Calculations with the Dynamical Vertex Approximation - arXiv](https://arxiv.org/abs/1709.02663)
 
-[The AbinitioDGA Project v1.0: Non-local correlations beyond and susceptibilities within dynamical mean-field-theory](https://arxiv.org/abs/1710.06651)
-
+[The AbinitioDGA Project v1.0: Non-local correlations beyond and susceptibilities within dynamical mean-field-theory - arXiv](https://arxiv.org/abs/1710.06651)
 
 ## Acknowledgments
 

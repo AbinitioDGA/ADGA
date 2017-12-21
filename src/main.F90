@@ -252,19 +252,26 @@ program main
   ! One can save memory by treating one channel at the time, at
   ! the (rather large) cost of recalculating chi_0^q.
   ! A more scalable idea is to use scalapack for the inversion.
-  ! A third option is to rewrite the equations to save space 
+  ! A third option is to rewrite the equations to save space
   ! if we have a lot of non-correlated atoms.
   allocate(chi0wFm(maxdim,maxdim))
   allocate(chi0wFd(maxdim,maxdim))
 
-  if (q_path_susc .and. do_chi .and. (.not. q_vol)) then
-    if (do_eom) call mpi_stop('Error: it is currently not possible to use both do_eom and q_path_susc',er)
-    call qdata_from_file()
-  else
+  if (q_path_susc) then
+    if (do_chi) then
+      call qdata_from_file()
+    endif
+    if (do_eom) then
+      call mpi_stop('Error: it is currently not possible to use both do_eom and q_path_susc',er)
+    endif
+  elseif (q_vol) then ! the only other option we have
     nqp=nqpx*nqpy*nqpz
+    if ((nqpx .le. 0) .or. (nqpy .le. 0) .or. (nqpz .le. 0)) then
+      call mpi_stop('Error: Given q-grid is not valid', er)
+    endif
     allocate(q_data(nqp))
     call generate_q_vol(nqpx,nqpy,nqpz,q_data)
-  end if
+  endif
 
 
 

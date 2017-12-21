@@ -364,12 +364,23 @@ subroutine config_init(er,erstr)
 
   if (q_vol) then
     nqp = nqpx*nqpy*nqpz
-    if (mod(nkpx,nqpx).ne.0 .or. mod(nkpy,nqpy).ne.0 .or. mod(nkpz,nqpz).ne.0) then
+    if ((nqpx .le. 0) .or. (nqpy .le. 0) .or. (nqpz .le. 0)) then
       er = 2
+      erstr = 'invalid q-grid'
+      return
+    endif
+    if (mod(nkpx,nqpx).ne.0 .or. mod(nkpy,nqpy).ne.0 .or. mod(nkpz,nqpz).ne.0) then
+      er = 3
       erstr = 'mismatch between k- and q-grid!'
       return
     endif
   end if
+
+  if ((.not. do_eom) .and. (.not. do_chi)) then
+    er = 4
+    erstr = 'all run options disabled'
+    return
+  endif
 
   ! create arrays with Matsubara frequencies
   allocate(iw_data(-iwmax:iwmax-1),iwb_data(-iwbmax_small:iwbmax_small),iwf_data(-iwfmax_small:iwfmax_small-1))
@@ -430,7 +441,7 @@ subroutine check_freq_range(mpi_wrank,master,er)
   endif
 
   if (n3iwb .lt. iwbmax_small .and. external_threelegs) then
-    er=1
+    er = 1
     if (ounit .gt. 0) then
       write(ounit,*) 'Error: N3iwb must be greater or equal to N4iwb'
       write(ounit,*) 'N3iwb=',n3iwb,'  N4iwb=',iwbmax_small
@@ -438,7 +449,7 @@ subroutine check_freq_range(mpi_wrank,master,er)
   end if
 
   if (n3iwf .lt. iwfmax_small .and. external_threelegs) then
-    er=1
+    er = 2
     if (ounit .gt. 0) then
       write(ounit,*) 'Error: N3iwf must be greater or equal to N4iwf'
       write(ounit,*) 'N3iwf=',n3iwf,'  N4iwf=',iwfmax_small
@@ -446,7 +457,7 @@ subroutine check_freq_range(mpi_wrank,master,er)
   end if
 
   if (n2iwb .lt. iwbmax_small .and. external_chi_loc) then
-    er=1
+    er = 3
     if (ounit .gt. 0) then
       write(ounit,*) 'Error: N2iwb must be greater or equal to N2iwb'
       write(ounit,*) 'N2iwb=',n2iwb,'  N4iwb=',iwbmax_small

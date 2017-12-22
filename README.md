@@ -31,7 +31,7 @@ The default output of ADGA is a partially compressed HDF5 file. For that reason 
 * scipy
 * matplotlib
 
-These packages are however not necessary for the purely computational part of ADGA. If one does not want to deal with Python it is still possible to output all data in form of text-files (see **documentation/configspec**). The instructions in **documentation/python\_intro.pdf** and the scripts found in **documentation/scripts/** provide a first starting point for extracting data and making plots.
+These packages are however not necessary for the purely computational part of ADGA. If one does not want to deal with Python it is still possible to output all data in form of text-files (see **documentation/configspec**). The instructions in **documentation/hdf5\_intro.pdf** and the scripts found in **documentation/scripts/** provide a first starting point for extracting data and making plots.
 
 ## Test Case SrVO3
 

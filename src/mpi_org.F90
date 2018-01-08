@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -89,6 +89,7 @@ module mpi_org
       if (ounit .ge. 1 .and. (verbose .and. (index(verbstr,"Mpi") .ne. 0))) then
         write(ounit,*) 'mpi_distribute: receive count (iqw*ndim**2)',rct
         write(ounit,*) 'mpi_distribute: corresponding displacements',disp
+        write(ounit,'(1x)')
       end if
 #else
       qwstart = 1
@@ -116,8 +117,8 @@ module mpi_org
    integer                             :: strlen      ! length
    integer                             :: mpi_errorflag   ! temp error flag
    character(len=5)                    :: fancynr  ! temp string for the mpi rank
-   logical                             :: unitopened ! tells if the file unit is open
 #endif
+   logical                             :: unitopened ! tells if the file unit is open
       inquire(unit=ounit,opened=unitopened)
       if (unitopened) call flush(ounit)
 #if MPI 

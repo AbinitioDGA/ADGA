@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -30,7 +30,7 @@ module one_particle_quant_module
   use lapack_module
   use parameters_module
   use aux
-  use mpi_org, only: mpi_wrank,master
+  use mpi_org, only: mpi_wrank,master,mpi_stop
   implicit none
 
   contains
@@ -44,6 +44,8 @@ subroutine get_giw()
   integer :: ik, iw, i
   complex(kind=8) :: g(ndim,ndim), g2(ndim,ndim)
   complex(kind=8),parameter :: ci = (0d0,1d0)
+  integer :: er
+  character(len=200) :: erstr
 
   giw = 0.d0
   do ik=1,nkp
@@ -56,7 +58,8 @@ subroutine get_giw()
            g(i,i) = g(i,i)-siw(iw,i) !no spin dependence in single particle Greens function
         enddo
         g2 = g(:,:)
-        call inverse_matrix(g2)
+        call inverse_matrix(g2,erstr,er)
+        if (er .ne. 0) call mpi_stop(erstr,er)
         do i=1,ndim
            giw(iw,i) = giw(iw,i)+g2(i,i)
         enddo
@@ -83,6 +86,8 @@ subroutine get_gkiw(ikq, iwf, iwb, gkiw)
   integer :: iwf, iwb, ikq
   complex(kind=8), intent(out) :: gkiw(ndim,ndim)
   complex(kind=8),parameter :: ci = (0d0,1d0)
+  integer :: er
+  character(len=200) :: erstr
 
 
   gkiw(:,:) = -hk(:,:,ikq)
@@ -92,7 +97,8 @@ subroutine get_gkiw(ikq, iwf, iwb, gkiw)
   do i=1,ndim
   gkiw(i,i) = gkiw(i,i)-siw(iwf-iwb,i)
   enddo
-  call inverse_matrix(gkiw)
+  call inverse_matrix(gkiw,erstr,er)
+  if (er .ne. 0) call mpi_stop(erstr,er)
 
 
 end subroutine get_gkiw
@@ -106,13 +112,16 @@ subroutine get_gkiw_dga(ik, iwf, skiw, gkiw)
   complex(kind=8), intent(in) :: skiw(ndim,ndim)
   complex(kind=8), intent(out) :: gkiw(ndim,ndim)
   complex(kind=8),parameter :: ci = (0d0,1d0)
+  integer :: er
+  character(len=200) :: erstr
 
 
   gkiw(:,:) = -hk(:,:,ik)-skiw(:,:)
   do i=1,ndim
      gkiw(i,i) = ci*iw_data(iwf)+mu-hk(i,i,ik)-dc(1,i)-skiw(i,i)
   enddo
-  call inverse_matrix(gkiw)
+  call inverse_matrix(gkiw,erstr,er)
+  if (er .ne. 0) call mpi_stop(erstr,er)
 
 end subroutine get_gkiw_dga
 
@@ -129,6 +138,9 @@ subroutine get_sigma_g_loc(sigma_sum, sigma_loc, gloc)
   integer :: ik, iw, i
   complex(kind=8) :: g(ndim,ndim), g2(ndim,ndim)
   complex(kind=8),parameter :: ci = (0d0,1d0)
+
+  integer :: er
+  character(len=200) :: erstr
 
   ! k-summed dga self-energy
   sigma_loc = 0.d0
@@ -147,7 +159,8 @@ subroutine get_sigma_g_loc(sigma_sum, sigma_loc, gloc)
            g(i,i) = ci*iw_data(iw)+mu-hk(i,i,ik)-dc(1,i)-sigma_sum(i,i,iw,ik)
         enddo
         g2 = g(:,:)
-        call inverse_matrix(g2)
+        call inverse_matrix(g2,erstr,er)
+        if (er .ne. 0) call mpi_stop(erstr,er)
         gloc(iw,:,:) = gloc(iw,:,:)+g2(:,:)
      enddo
 
@@ -158,7 +171,8 @@ subroutine get_sigma_g_loc(sigma_sum, sigma_loc, gloc)
            g(i,i) = ci*iw_data(iw)+mu-hk(i,i,ik)-dc(1,i)-siw(iw,i)
         enddo
         g2 = g(:,:)
-        call inverse_matrix(g2)
+        call inverse_matrix(g2,erstr,er)
+        if (er .ne. 0) call mpi_stop(erstr,er)
         gloc(iw,:,:) = gloc(iw,:,:)+g2(:,:)
      enddo
 
@@ -220,6 +234,9 @@ subroutine accumulate_chi0(ik, ikq, iwf, iwb, chi0)
   complex(KIND=8) :: c
   complex(kind=8),parameter :: ci = (0d0,1d0)
 
+  integer :: er
+  character(len=200) :: erstr
+
   g1(:,:) = -hk(:,:,ik)
   do i=1,ndim
      g1(i,i) = ci*iw_data(iwf)+mu-hk(i,i,ik)-dc(1,i)-siw(iwf,i)
@@ -233,7 +250,8 @@ subroutine accumulate_chi0(ik, ikq, iwf, iwb, chi0)
   else if (ndim .eq. 3) then
     call inverse_matrix_3(g1)
   else
-    call inverse_matrix(g1)
+    call inverse_matrix(g1,erstr,er)
+    if (er .ne. 0) call mpi_stop(erstr,er)
   end if
 
   g2(:,:) = -hk(:,:,ikq)
@@ -248,7 +266,8 @@ subroutine accumulate_chi0(ik, ikq, iwf, iwb, chi0)
   else if (ndim .eq. 3) then
     call inverse_matrix_3(g2)
   else
-    call inverse_matrix(g2)
+    call inverse_matrix(g2,erstr,er)
+    if (er .ne. 0) call mpi_stop(erstr,er)
   end if
 
   ! Accumulate chi0
@@ -325,7 +344,7 @@ end subroutine get_nfock
 subroutine get_ndga(sigma_sum)
   implicit none
   integer :: ik,iw,i
-  complex(kind=8), intent(in) :: sigma_sum(ndim,ndim,-iwfmax_small:iwfmax_small-1, nkp)
+  complex(kind=8), intent(in) :: sigma_sum(ndim,ndim,-iwfmax_small:iwfmax_small-1, nkp_eom)
   complex(kind=8) :: gkiw(ndim,ndim)
   complex(kind=8) :: skiw(ndim,ndim)
 
@@ -334,9 +353,9 @@ subroutine get_ndga(sigma_sum)
   n_dga_k = 0.d0
   n_dga = 0.d0
   gkiw = 0.d0
-  do ik=1,nkp
+  do ik=1,nkp_eom
      do iw=0,iwfmax_small-1
-        call get_gkiw_dga(ik, iw, sigma_sum(:,:,iw,ik), gkiw)
+        call get_gkiw_dga(k_data_eom(ik), iw, sigma_sum(:,:,iw,ik), gkiw)
         n_dga_k(ik,:,:) = n_dga_k(ik,:,:)+real(gkiw(:,:))
      enddo
      do iw=iwfmax_small,iwmax-1
@@ -344,7 +363,7 @@ subroutine get_ndga(sigma_sum)
         do i=1,ndim
           skiw(i,i) = siw(iw,i) ! orbital diagonal
         enddo
-        call get_gkiw_dga(ik, iw, skiw(:,:), gkiw)
+        call get_gkiw_dga(k_data_eom(ik), iw, skiw(:,:), gkiw)
         n_dga_k(ik,:,:) = n_dga_k(ik,:,:)+real(gkiw(:,:))
      enddo
      n_dga_k(ik,:,:) = 2.d0*n_dga_k(ik,:,:)/beta
@@ -354,20 +373,23 @@ subroutine get_ndga(sigma_sum)
      enddo
   enddo
 
-  n_dga = n_dga/dble(nkp)
+  n_dga = n_dga/dble(nkp_eom)
 
   if (mpi_wrank .eq. master .and. text_output) then
     open(110, file=trim(output_dir)//"n_dga_k.dat", status='unknown')
     write(110,*)  '# ik, kx, ky, kz, n_dga(k,i,i) [i=1,ndim]'
-    do ik=1,nkp
-      write(110,'(I8,100F12.6)') ik, k_data(1,ik),k_data(2,ik),k_data(3,ik), (real(n_dga_k(ik,i,i)),i=1,ndim)
+    do ik=1,nkp_eom
+      write(110,'(I8,100F12.6)') ik, k_data(1,k_data_eom(ik)), k_data(2,k_data_eom(ik)), &
+        k_data(3,k_data_eom(ik)), (real(n_dga_k(ik,i,i)),i=1,ndim)
     enddo
     close(110)
 
-    open(111, file=trim(output_dir)//"n_dga.dat", status='unknown')
-    write(111,*) '# n_dga(i,i) [i=1,ndim]'
-    write(111,'(100F12.6)') (real(n_dga(i)),i=1,ndim)
-    close(111)
+    if (.not. k_path_eom) then
+      open(111, file=trim(output_dir)//"n_dga.dat", status='unknown')
+      write(111,*) '# n_dga(i,i) [i=1,ndim]'
+      write(111,'(100F12.6)') (real(n_dga(i)),i=1,ndim)
+      close(111)
+    endif
   endif
 end subroutine get_ndga
 

@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -121,6 +121,7 @@ subroutine read_config(er,erstr)
   do_eom=.true.                       ! eom-calculation on
   q_vol=.true.                        ! homogeneous q-volume on
   q_path_susc=.false.                 ! q-path disabled
+  k_path_eom=.false.                  ! k-path disabled
   external_chi_loc=.false.            ! no external local chi
   external_threelegs=.false.          ! no external gamma^wv
 
@@ -131,6 +132,7 @@ subroutine read_config(er,erstr)
 
   filename_hk=''; filename_1p=''; filename_vertex_sym=''
   filename_vq=''; filename_qdata=''; filename_umatrix=''
+  filename_kdata=''
   filename_chi_loc=''; filename_threelegs=''
 
   dmft_iter='dmft-last'
@@ -151,6 +153,11 @@ subroutine read_config(er,erstr)
     erstr = 'General Group not found'
     return
   endif
+  if (search_start .eq. -1) then ! group was not found
+    er = 4
+    erstr = 'General Group empty'
+    return
+  endif
   call bool_find('calc-susc', do_chi, search_start, search_end)
   call bool_find('calc-eom', do_eom, search_start, search_end)
   call int_find('NAt', nineq, search_start, search_end)
@@ -164,7 +171,7 @@ subroutine read_config(er,erstr)
   endif
   call string_find('VqFile', filename_vq, search_start, search_end)
   if (trim(adjustl(filename_vq)) .eq. '') then
-    do_vq = .false. 
+    do_vq = .false.
   else
     do_vq = .true.
   endif
@@ -175,6 +182,12 @@ subroutine read_config(er,erstr)
   else
     q_path_susc = .true.
     q_vol = .false.
+  end if
+  call string_find('KDataFile', filename_kdata, search_start, search_end)
+  if (trim(adjustl(filename_kdata)) .eq. '') then
+    k_path_eom = .false.
+  else
+    k_path_eom = .true.
   end if
   call int3_find('k-grid', nkpx, nkpy, nkpz, search_start, search_end)
   call int3_find('q-grid', nqpx, nqpy, nqpz, search_start, search_end)
@@ -212,10 +225,13 @@ subroutine read_config(er,erstr)
 
   ! Make sure that we only use 1 q-point when we run with Onlydmft
   if (debug .and. (index(dbgstr,"Onlydmft") .ne. 0)) then
-     ! Only local quantities
+     ! Only local quantities and overwrite everything else
      nqpx = 1
      nqpy = 1
      nqpz = 1
+     q_vol = .true.
+     q_path_susc =.false.
+     k_path_eom = .false.
   endif
 
   allocate(interaction(nineq))
@@ -234,16 +250,26 @@ subroutine read_config(er,erstr)
   ! search for Atoms (interaction parameters for umatrix)
   call group_find('[Atoms]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
-    er = 4
+    er = 5
     erstr = 'Atoms Group not found'
+    return
+  endif
+  if (search_start .eq. -1) then ! group empty
+    er = 6
+    erstr = 'Atoms Group empty'
     return
   endif
   do ineq=1,nineq
     write(str_ineq,'(A2,I1,A2)') '[[',ineq,']]'
     call subgroup_find(str_ineq, search_start, search_end, subsearch_start, subsearch_end)
     if (subsearch_start .eq. 0) then ! group was not found
-      er = 5
+      er = 7
       write(erstr,'("Atomnumber ", I1," subgroup not found")') ineq
+      return
+    endif
+    if (subsearch_start .eq. -1) then ! group empty
+      er = 8
+      write(erstr,'("Atomnumber ", I1," subgroup empty")') ineq
       return
     endif
 
@@ -274,7 +300,7 @@ subroutine read_config(er,erstr)
   ndim=sum(ndims)
 
   if (ndim .eq. 0) then
-    er = 6
+    er = 9
     erstr = 'Number of bands per atom is required in [Atoms] section'
     return
   endif
@@ -286,8 +312,13 @@ subroutine read_config(er,erstr)
   ! search for 1particle and 2particle files / parameters
   call group_find('[One-Particle]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
-    er = 7
+    er = 10
     erstr = 'One-Particle Group not found'
+    return
+  endif
+  if (search_start .eq. -1) then ! group was not found
+    er = 11
+    erstr = 'One-Particle Group empty'
     return
   endif
   call string_find('1PFile', filename_1p, search_start, search_end)
@@ -296,8 +327,13 @@ subroutine read_config(er,erstr)
 
   call group_find('[Two-Particle]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
-    er =8
+    er = 12
     erstr= 'Two-Particle Group not found'
+    return
+  endif
+  if (search_start .eq. -1) then ! group was not found
+    er = 13
+    erstr= 'Two-Particle Group empty'
     return
   endif
   call string_find('2PFile', filename_vertex_sym, search_start, search_end)
@@ -345,8 +381,8 @@ subroutine config_init(er,erstr)
   maxdim = ndim*ndim*2*iwfmax_small
   ndim2 = ndim*ndim
   if (chi0flag .and. do_chi) then
-    iwstart=min(-iwmax+iwbmax,-iwfmax_small)
-    iwstop=max(iwmax-iwbmax-1,iwfmax_small-1)
+    iwstart=-iwmax+iwbmax_small ! we have a config check for the previous min statement now
+    iwstop=iwmax-iwbmax_small-1 ! same here for the previous max statement
   else
     iwstart=-iwfmax_small
     iwstop=iwfmax_small-1
@@ -402,7 +438,7 @@ subroutine finalize()
 end subroutine finalize
 
 
-subroutine check_freq_range(mpi_wrank,master,er)
+subroutine check_freq_range(er)
   implicit none
   integer :: mpi_wrank, master, er
 
@@ -446,6 +482,7 @@ subroutine check_freq_range(mpi_wrank,master,er)
       write(ounit,*) 'Error: N3iwb must be greater or equal to N4iwb'
       write(ounit,*) 'N3iwb=',n3iwb,'  N4iwb=',iwbmax_small
     end if
+    return
   end if
 
   if (n3iwf .lt. iwfmax_small .and. external_threelegs) then
@@ -454,16 +491,31 @@ subroutine check_freq_range(mpi_wrank,master,er)
       write(ounit,*) 'Error: N3iwf must be greater or equal to N4iwf'
       write(ounit,*) 'N3iwf=',n3iwf,'  N4iwf=',iwfmax_small
     end if
+    return
   end if
 
   if (n2iwb .lt. iwbmax_small .and. external_chi_loc) then
     er = 3
     if (ounit .gt. 0) then
-      write(ounit,*) 'Error: N2iwb must be greater or equal to N2iwb'
+      write(ounit,*) 'Error: N2iwb must be greater or equal to N4iwb'
       write(ounit,*) 'N2iwb=',n2iwb,'  N4iwb=',iwbmax_small
     end if
+    return
   end if
-  
+
+  ! in order to calculate the susceptibility (lower leg: v-w)
+  ! the DMFT frequency box has to be larger(>=) than
+  ! v_vertex + w_vertex, so that v_vertex - ( -w_vertex)
+  ! is still contained.
+  if (iwmax .lt. (iwfmax_small + iwbmax_small)) then
+    er = 4
+    if (ounit .gt. 0) then
+      write(ounit,*) 'Error: N1iwf must be greater than N4iwf + N4iwb'
+      write(ounit,*) 'N1iwf=',iwmax,'  N4iwf=',iwfmax_small,'  N4iwb=',iwbmax_small
+    endif
+    return
+  endif
+
 end subroutine check_freq_range
 
 
@@ -536,6 +588,14 @@ subroutine check_config(er,erstr)
     erstr = "Error: Choose appropriate vertex type"
   endif
 
+  if (k_path_eom) then
+    inquire (file=trim(filename_kdata), exist=there)
+    if (.not. there) then
+        er = 8
+        erstr = TRIM(ADJUSTL(erstr))//"Error: Can not find the K-Path file: "//trim(filename_kdata)
+        return
+    endif
+  endif
   return
 end subroutine check_config
 

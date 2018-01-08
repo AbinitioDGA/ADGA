@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -41,11 +41,11 @@ module parameters_module
   
   ! different loop variables and information about box sizes
   integer :: iwstart,iwstop
-  integer :: nqp,nkp_eom, idp
+  integer :: nqp, nkp_eom
   integer :: nkp, ndim, ndim2, maxdim, nineq
-  integer :: nkpx,nkpy,nkpz,nkp1,nqpx,nqpy,nqpz,nqp1
+  integer :: nkpx,nkpy,nkpz,nqpx,nqpy,nqpz
   integer :: iwmax, iwbmax, iwfmax, iwbmax_small, iwfmax_small,n2iwb,n3iwf,n3iwb
-  integer,allocatable :: q_data(:)
+  integer,allocatable :: q_data(:), k_data_eom(:)
 
   ! input data created from dmft
   integer, allocatable :: ndims(:,:)
@@ -64,6 +64,7 @@ module parameters_module
   logical :: orb_sym
   logical :: do_eom,do_chi,do_vq
   logical :: q_path_susc,q_vol,read_ext_hk,read_ext_u
+  logical :: k_path_eom
   logical :: external_chi_loc,external_threelegs
   logical :: exist_p
   logical :: susc_full_output
@@ -78,6 +79,7 @@ module parameters_module
   character(len=150) :: filename_umatrix, filename_vq
   character(len=150) :: filename_1p
   character(len=150) :: filename_hk, output_dir, filename_qdata
+  character(len=150) :: filename_kdata
   character(len=100) :: config_file
 
   ! hdf5 iters

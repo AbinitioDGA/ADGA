@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -57,18 +57,32 @@ subroutine generate_q_vol(nqpx,nqpy,nqpz,qdata)
 end subroutine generate_q_vol
 
 subroutine index_kq(ind)
-      implicit none
-      integer ikp,jkp
-      integer :: ind(nkp,nqp)
-      ind = 0
+  implicit none
+  integer, intent(out) :: ind(nkp,nqp)
+  
+  integer ikp,jkp
+  ind = 0
 
-      do ikp=1,nkp
-        do jkp=1,nqp
-          ind(ikp,jkp)=k_minus_q(ikp,q_data(jkp))
-        end do
-      end do
-
+  do ikp=1,nkp
+    do jkp=1,nqp
+      ind(ikp,jkp)=k_minus_q(ikp,q_data(jkp))
+    end do
+  end do
 end subroutine index_kq 
+
+subroutine index_kq_eom(ind)
+  implicit none
+  integer, intent(out) :: ind(nkp_eom,nqp)
+
+  integer ikp,jkp
+  ind = 0
+
+  do ikp=1,nkp_eom
+    do jkp=1,nqp
+      ind(ikp,jkp)=k_minus_q(k_data_eom(ikp),q_data(jkp))
+    end do
+  end do
+end subroutine index_kq_eom 
 
 ! The following function calculates the index of \vec{k} - \vec{q}.
 ! It uses only integers
@@ -169,5 +183,40 @@ subroutine qdata_from_file()
   !write(*,*) 'q data',q_data
 
 end subroutine qdata_from_file
+
+subroutine kdata_from_file()
+  ! defining k_data_eom by mapping to the contigous k_data array analogous to q_data
+  use parameters_module
+
+  implicit none
+  integer :: iostatus,ik
+  character(100) :: str_tmp
+  real(8) :: kx,ky,kz
+
+  iostatus=0
+  open(unit=101,file=filename_kdata)
+  
+  nkp_eom = -1
+  do while (iostatus.eq.0)
+    read(101,*,iostat=iostatus) str_tmp
+    nkp_eom=nkp_eom+1
+  end do
+  close(101)
+
+  allocate(k_data_eom(nkp_eom))
+  open(unit=101,file=filename_kdata)
+  do ik=1,nkp_eom
+    read(101,*) kx,ky,kz
+    if (kx .eq. 0 .and. ky .eq. 0 .and. kz .eq. 0) then 
+      k_data_eom(ik) = k_index(0,0,0) ! gamma point
+    else if (kx .ge. 1 .or. ky .ge. 1 .or. kz .ge. 1) then
+      k_data_eom(ik) = k_index(int(kx),int(ky),int(kz)) ! cast to integers
+    else
+      k_data_eom(ik) = k_index(nint(kx*nkpx),nint(ky*nkpy),nint(kz*nkpz)) ! round to nearest integers
+    end if
+  end do
+  close(101)
+
+end subroutine kdata_from_file
 
 end module kq_tools

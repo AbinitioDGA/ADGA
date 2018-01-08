@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018> 
+! Copyright (C) <2017, 2018>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !
@@ -45,7 +45,7 @@ module susc_module
         do dum=0,2*iwfmax_small-1
            do i3=1,ndim2
               iwf = dum - iwfmax_small
-              i = i3 + dum*ndim2 ! = {i3,iwf} 
+              i = i3 + dum*ndim2 ! = {i3,iwf}
               chi_tmp(:,i2)=chi_tmp(:,i2)+interm3(:,i)*chi0_sum(i3,i2,iwf)
            end do
         end do
@@ -62,11 +62,7 @@ module susc_module
     complex(kind=8),intent(in)  :: chi_qw(ndim2,ndim2,nqp*(2*iwbmax_small+1))
     integer,intent(in)          :: qw(2,nqp*(2*iwbmax+1))
     character(len=*),intent(in) :: filename_output
-    integer :: iwb,iq,i,j,i1
-
-    if (ounit .ge. 1 .and. (verbose .and. (index(verbstr,"Output") .ne. 0))) then
-      write(ounit,*) 'Output chi_qw'
-    endif
+    integer                     :: iwb,iq,i,j,i1
 
     ! open file and write head line
     open(unit=10,file=trim(output_dir)//filename_output)
@@ -80,7 +76,7 @@ module susc_module
        iq = qw(2,i1)
        iwb = qw(1,i1)
         write(10,'(I8,E14.7E2,I8,9999E18.7E2)') iwb,iwb_data(iwb),iq,k_data(:,q_data(iq)), &
-                   ((real(chi_qw((i-1)*ndim+1,(j-1)*ndim+1,i1)), real(chi_qw((i-1)*ndim+1,(j-1)*ndim+1,i1)), j=i,ndim), i=1,ndim)
+                   ((real(chi_qw((i-1)*ndim+i,(j-1)*ndim+j,i1)), aimag(chi_qw((i-1)*ndim+i,(j-1)*ndim+j,i1)), j=i,ndim), i=1,ndim)
        ! insert an empty line after each omega block. could be useful for plotting.
        if (mod(i1,nqp).eq.0) then
           write(10,*) ' '
@@ -88,19 +84,19 @@ module susc_module
 
     end do
 
+    if (ounit .ge. 1 .and. (verbose .and. (index(verbstr,"Output") .ne. 0))) then
+      write(ounit,*) 'nonlocal susceptibility written to ', trim(filename_output)
+    endif
+
     close(10)
   end subroutine output_chi_qw
 
   subroutine output_chi_loc(chi_w,filename_output)
     use parameters_module
     implicit none
-    complex(kind=8),intent(in) :: chi_w(ndim2,ndim2,2*iwbmax_small+1)
+    complex(kind=8),intent(in)  :: chi_w(ndim2,ndim2,2*iwbmax_small+1)
     character(len=*),intent(in) :: filename_output
-    integer :: iwb,i,j,i1
-
-    if (ounit .ge. 1 .and. (verbose .and. (index(verbstr,"Output") .ne. 0))) then
-     write(ounit,*) 'output chi_loc'
-    endif
+    integer                     :: iwb,i,j,i1
 
     ! open file and write head line
     open(unit=10,file=trim(output_dir)//filename_output)
@@ -112,9 +108,15 @@ module susc_module
     ! loop over all entries
     do i1=1,2*iwbmax_small+1
       iwb = i1-iwbmax_small-1
-      write(10,'(I8,9999E18.7E2)') iwb,iwb_data(iwb), ((real(chi_w((i-1)*ndim+1,(j-1)*ndim+1,i1)), aimag(chi_w((i-1)*ndim+1,(j-1)*ndim+1,i1)), j=i,ndim), i=1,ndim)
+      write(10,'(I8,9999E18.7E2)') iwb,iwb_data(iwb), &
+         ((real(chi_w((i-1)*ndim+i,(j-1)*ndim+j,i1)), aimag(chi_w((i-1)*ndim+i,(j-1)*ndim+j,i1)), j=i,ndim), i=1,ndim)
     end do
     close(10)
+
+    if (ounit .ge. 1 .and. (verbose .and. (index(verbstr,"Output") .ne. 0))) then
+     write(ounit,*) 'local susceptibility written to ', trim(filename_output)
+    endif
+
   end subroutine output_chi_loc
 
 end module

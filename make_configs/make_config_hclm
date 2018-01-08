@@ -3,7 +3,7 @@ LDFLAGS += -I/opt/hdf5-1.8.16_gcc/include/
 LDFLAGS += -L/opt/hdf5-1.8.16_gcc/lib/
 
 F90 = mpif90 # for hclm
-FFLAGS += -O3  -ffree-line-length=256 # this compiler doesnt like long lines
+FFLAGS += -O3
 #FFLAGS += -O3 -g -fbacktrace
 FPPFLAGS = -DMPI
 FINCLUDE += -I/opt/hdf5-1.8.16_gcc/include/

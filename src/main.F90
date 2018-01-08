@@ -786,9 +786,12 @@ end if
      allocate(sigma_sum(ndim, ndim, -iwfmax_small:iwfmax_small-1, nkp_eom),sigma_sum_hf(ndim,ndim,nkp_eom))
      allocate(sigma_sum_dmft(ndim, ndim, -iwfmax_small:iwfmax_small-1))
 #ifdef MPI
-     call MPI_reduce(sigma_nl, sigma_sum, ndim*ndim*2*iwfmax_small*nkp_eom, MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
-     call MPI_reduce(sigma_hf,sigma_sum_hf,ndim*ndim*nkp_eom,MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
-     call MPI_reduce(sigma_dmft,sigma_sum_dmft,ndim*ndim*2*iwfmax_small,MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
+     call MPI_reduce(sigma_nl, sigma_sum, ndim*ndim*2*iwfmax_small*nkp_eom, &
+          MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
+     call MPI_reduce(sigma_hf,sigma_sum_hf,ndim*ndim*nkp_eom, &
+          MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
+     call MPI_reduce(sigma_dmft,sigma_sum_dmft,ndim*ndim*2*iwfmax_small,&
+          MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
 #else
      sigma_sum = sigma_nl
      sigma_sum_hf = sigma_hf

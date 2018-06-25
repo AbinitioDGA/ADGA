@@ -40,7 +40,7 @@ module susc_module
      complex(kind=8)                :: chi_tmp(ndim2,ndim2)
      integer :: dum,iwf,i3,i1,i2,i
      ! Initialize
-     chi_tmp = 0
+     chi_tmp = 0.d0
      do i2=1,ndim2
         do dum=0,2*iwfmax_small-1
            do i3=1,ndim2

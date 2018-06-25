@@ -36,7 +36,7 @@ module one_particle_quant_module
   contains
 
 ! calculation of greens functions
-!=========================================================================== 
+!===========================================================================
 subroutine get_giw()
   ! calculation of dmft impurity greens function with orbital diagonal self energy
   ! we do the inversion and then only use the diagonal elements
@@ -188,7 +188,7 @@ end subroutine get_sigma_g_loc
 
 
 ! calculation of susceptibilities
-!=========================================================================== 
+!===========================================================================
 subroutine get_chi0_loc(iwf, iwb, chi0_loc)
   implicit none
   integer :: i, j, k, l, i1, i2
@@ -291,7 +291,7 @@ end subroutine accumulate_chi0
 
 
 ! calculation of occupations
-!=========================================================================== 
+!===========================================================================
 subroutine get_ndmft()
   implicit none
   integer :: iw,i

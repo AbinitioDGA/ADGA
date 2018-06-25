@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # This file is part of the Abinitio Dynamical Vertex Approximation (ADGA)
 # package. It is an electronic structure code which allows the inclusion of
 # non-local correlations beyond DMFT and the calculation of momentum-dependent
@@ -9,8 +11,8 @@
 # The arXiv publication can be found at
 # https://arxiv.org/abs/1710.06651
 #
-# Copyright (C) <2017, 2018> 
-# <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
+# Copyright (C) <2017, 2018>
+# <Anna Galler*, Patrick Thunstr\"om, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 # * Corresponding author. E-mail address: galler.anna@gmail.com
 #
 # This program is free software; you can redistribute it and/or modify
@@ -25,8 +27,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-#! /usr/bin/env python
 
 from __future__ import print_function,
 import numpy as np
@@ -47,6 +47,7 @@ ndim = hk.shape[0]
 nqx = f['input/nqpxyz'][0]
 nqy = f['input/nqpxyz'][1]
 nqz = f['input/nqpxyz'][2]
+beta = f['input/beta'][()]
 
 # create the matsubara axis
 fmats = np.linspace(-(iwf*2-1)*np.pi/beta,(iwf*2-1)*np.pi/beta,2*iwf)

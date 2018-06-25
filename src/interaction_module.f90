@@ -51,7 +51,7 @@ subroutine read_vq(iq, v,er,erstr)
   character(len=*) :: erstr
   integer(hsize_t), dimension(2) :: iq_dims, iq_maxdims
   integer(hsize_t), dimension(1) :: vq_dims
-  double precision :: vq_tmp_r(nqp), vq_tmp_i(nqp)
+  double precision, allocatable :: vq_tmp_r(:), vq_tmp_i(:)
   complex(kind=8),parameter :: ci = (0d0,1d0)
 
   er = 0
@@ -62,13 +62,19 @@ subroutine read_vq(iq, v,er,erstr)
   call h5dopen_f(vq_file_id, ".axes/Q-points", iq_id, err)
   call h5dget_space_f(iq_id, iq_space_id, err)
   call h5sget_simple_extent_dims_f(iq_space_id, iq_dims, iq_maxdims, err)
-  if(iq_dims(2) .ne. nqp) then
+  if((iq_dims(2) .ne. nqp) .and. q_vol) then
      er = 1
      write(erstr,*) 'Inconsistent number of q-points in V^q!', iq_dims(2),'/',nqp
      return
   endif
 
   vq = 0.d0
+
+  if (q_vol) then
+    allocate(vq_tmp_r(nqp),vq_tmp_i(nqp))
+  else
+    allocate(vq_tmp_r(nkp),vq_tmp_i(nkp))
+  endif
 
   call h5gn_members_f(vq_file_id, "/", nmembers, err)
   do imembers = 1,nmembers - 1
@@ -80,7 +86,18 @@ subroutine read_vq(iq, v,er,erstr)
      call h5dread_f(grp_id, type_r_id, vq_tmp_r, vq_dims, err)
      call h5dread_f(grp_id, type_i_id, vq_tmp_i, vq_dims, err)
 
-     vq(i,j,k,l) = vq_tmp_r(iq)+ci*vq_tmp_i(iq)
+     if (q_vol) then
+       ! the q-mesh must be identical to the number of q-points in the VqFile
+       ! it also must be produced exactly for that mesh
+       ! we do not allow grabbing e.g. 10x10x10 q-points from a 20x20x20 Vq-file
+       vq(i,j,k,l) = vq_tmp_r(iq)+ci*vq_tmp_i(iq)
+     else
+       ! q-path -> q-mesh == k-mesh
+       ! therefore we calculate the q-coordinates and then recalculate
+       ! the according q-point on the mesh
+       ! thus qpath -> Vqfile for the whole k(!)-grid
+       vq(i,j,k,l) = vq_tmp_r(q_data(iq))+ci*vq_tmp_i(q_data(iq))
+     endif
 
      call h5dclose_f(grp_id, err)
   enddo
@@ -100,6 +117,8 @@ subroutine read_vq(iq, v,er,erstr)
         enddo
      enddo
   enddo
+
+  deallocate(vq_tmp_r, vq_tmp_i)
 
 end subroutine read_vq
 !========================================================================================================
@@ -176,9 +195,9 @@ subroutine create_u(u, u_tilde)
   do k=1,ndim
   do l=1,ndim
 
-    ineq=index2ineq(nineq,ndims,i,j,k,l) 
+    ineq=index2ineq(nineq,ndims,i,j,k,l)
     if (ineq .eq. 0) cycle ! not on the same impurity
-  
+
     ! DD - VALUES
     if (index2cor(nineq,ndims,i,j,k,l)) then
       if (i .eq. j .and. k .eq. l)  then

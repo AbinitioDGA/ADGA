@@ -30,9 +30,10 @@ module lookup_module
   use parameters_module
   implicit none
   private
-  integer :: i, pst
+  integer :: i,j,pst
   character(len=150) :: str_temp, str_split
-  public :: string_find, int_find, int3_find, float_find, bool_find, group_find, subgroup_find
+  public :: string_find, int_find, int3_find, float_find, bool_find, group_find, subgroup_find, &
+            spell_check
 
   contains
 
@@ -168,22 +169,55 @@ module lookup_module
       endif
     enddo
 
-    do i=save_start, search_end
-      if (index(trim(file_save(i)),'[') .eq. 1) then
-        save_end=i-1 ! one above the next session
-        exit
+    if (save_start .ge. 1) then ! subgroup found
+      do i=save_start, search_end
+        if (index(trim(file_save(i)),'[') .eq. 1) then
+          save_end=i-1 ! one above the next session
+          exit
+        endif
+      enddo
+
+      if(save_end .eq. 0) then
+        save_end = search_end ! if nothing else is found, until the end of the group
+                              ! whose size was already determined by group_find
       endif
-    enddo
 
-    if(save_end .eq. 0) then
-      save_end = search_end ! if nothing else is found, until the end of the group
-                            ! whose size was already determined by group_find
+      if (save_start .gt. save_end) then ! subgroup found, but no content
+        save_start = -1
+      endif
     endif
-
-    if (save_start .gt. save_end) then ! subgroup found, but no content
-      save_start = -1
-    endif
+    return
     ! save_start -> 0: not found; -1: found, but empty
   end subroutine subgroup_find
+
+  subroutine spell_check(search_start, search_end, grname, dictionary, er, erstr)
+    character(*), intent(in) :: grname
+    character(*), intent(in) :: dictionary(:)
+    integer, intent(in) :: search_start, search_end
+    integer, intent(out) :: er
+    character(len=200), intent(out) :: erstr
+
+    do i=search_start,search_end
+      str_temp = file_save(i)
+      pst=scan(str_temp,seperator)
+      if (pst .eq. 0) then
+        er = 100
+        erstr = 'Variable in '//trim(grname)//' group without argument: '//str_temp
+        return
+      endif
+      str_temp=trim(adjustl(str_temp(:(pst-1))))
+      er = 101
+      do j = 1,size(dictionary)
+        if (str_temp == dictionary(j)) then
+          er = 0
+          exit
+        endif
+      enddo
+      if (er .ne. 0) then
+        erstr = 'Spelling error in '//trim(grname)//' group: '//str_temp
+        return
+      endif
+    enddo
+  end subroutine spell_check
 
 end module lookup_module

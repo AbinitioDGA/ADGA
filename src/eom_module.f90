@@ -52,7 +52,7 @@ contains
    ! First of all, do the Hartree local part:
    if(iq==1) then
       !compute local Hartree-Fock contribution and add it to sigma_dmft:
-      ! u(i,j,k,l) = u( i1 = {ki}, i2 = {jl} ), 
+      ! u(i,j,k,l) = u( i1 = {ki}, i2 = {jl} ),
       ! so u(i,j,i,j) = u( i1 = {ii}, i2 = {jj} )
       ! and u(i,j,j,i) = u( i1 = {ji}, i2 = {ji} ) (only for equal spins)
       sigma_tmp = 0
@@ -71,7 +71,7 @@ contains
       ! Calculate the non-local hartree contribution to the self-energy
       if (nonlocal .and. do_vq) then
          ! 1. Compute non-local Hartree-contribution 2*v(q=0)*n_DMFT and add it to sigma_hf (only for q = 0)
-         ! vq(i,j,k,l) = vq( i1 = {ki}, i2 = {jl} ), 
+         ! vq(i,j,k,l) = vq( i1 = {ki}, i2 = {jl} ),
          ! so vq(i,j,i,j) = vq( i1 = {ii}, i2 = {jj} ), (and vq(i,j,j,i) = vq( i1 = {ji}, i2 = {ji} ) )
          ! Nb: n_dmft is NOT diagonal if we have ineq atoms!
          do i=1,ndim
@@ -84,7 +84,7 @@ contains
       endif
    endif
 
-   
+
    if (nonlocal .and. do_vq) then
       ! 1. Compute non-local Fock-contribution v(q)*n_fock(k-q) and add it to sigma_hf
       i2=0
@@ -226,9 +226,9 @@ end subroutine calc_eom_dmft
             enddo
          enddo
          sigma_nl(:,:,-iwf-1,ik) = transpose(conjg(sigma_nl(:,:,iwf,ik)))
-      enddo !iwf 
+      enddo !iwf
    enddo !ik
-   
+
    return
 end subroutine calc_eom_dynamic
 !=============================================================================================

@@ -41,11 +41,16 @@ subroutine read_config(er,erstr)
   integer :: int_temp
   character(len=150) :: str_temp, str_ineq
 
-
   integer :: search_start, search_end
   integer :: subsearch_start, subsearch_end
   character(len=150) :: config_file, output
   integer :: pst, empty
+
+  character(len=50), allocatable  :: general_dict(:)
+  character(len=50), allocatable  :: atom_dict(:)
+  character(len=50), allocatable  :: oneparticle_dict(:)
+  character(len=50), allocatable  :: twoparticle_dict(:)
+  character(len=50), allocatable  :: output_dict(:)
 
   er = 0
   erstr = ''
@@ -113,10 +118,10 @@ subroutine read_config(er,erstr)
   close(unit=10)
 
 
-!=================================================================================
-! FREE FORMAT LOOKUP
-!================================================================================
-  ! defining default values
+  !=================================================================================
+  ! FREE FORMAT LOOKUP
+  !================================================================================
+  ! defining sensible default values
   do_chi=.true.                       ! chi-calculation on
   do_eom=.true.                       ! eom-calculation on
   q_vol=.true.                        ! homogeneous q-volume on
@@ -144,9 +149,10 @@ subroutine read_config(er,erstr)
   iwbmax_small=-1
   nkpx = 0; nkpy = 0; nkpz = 0
   nqpx = 0; nqpy = 0; nqpz = 0
-!================================================================================
+  !================================================================================
 
   ! search for General stuff + Allocation of values
+  !--------------------------------------------------------------------------------
   call group_find('[General]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
     er = 3
@@ -158,6 +164,28 @@ subroutine read_config(er,erstr)
     erstr = 'General Group empty'
     return
   endif
+
+  allocate(general_dict(13))
+  ! defining dictionary (filling of general_dict)
+  general_dict(1)  = 'calc-susc'
+  general_dict(2)  = 'calc-eom'
+  general_dict(3)  = 'NAt'
+  general_dict(4)  = 'N4iwf'
+  general_dict(5)  = 'N4iwb'
+  general_dict(6)  = 'HkFile'
+  general_dict(7)  = 'VqFile'
+  general_dict(8)  = 'QDataFile'
+  general_dict(9)  = 'KDataFile'
+  general_dict(10) = 'k-grid'
+  general_dict(11) = 'q-grid'
+  general_dict(12) = 'Output'
+  general_dict(13) = 'UFile'
+  ! spell checking for General group
+  call spell_check(search_start, search_end, 'General', general_dict, er, erstr)
+  if (er .ne. 0) return
+  deallocate(general_dict)
+
+  ! read values
   call bool_find('calc-susc', do_chi, search_start, search_end)
   call bool_find('calc-eom', do_eom, search_start, search_end)
   call int_find('NAt', nineq, search_start, search_end)
@@ -207,6 +235,7 @@ subroutine read_config(er,erstr)
     read_ext_u = .true.
   endif
 
+  !--------------------------------------------------------------------------------
   verbose = .false.
   verbstr = ''
   call group_find('[Verbose]', search_start, search_end)
@@ -215,6 +244,7 @@ subroutine read_config(er,erstr)
      verbstr = file_save(search_start)
   endif
 
+  !--------------------------------------------------------------------------------
   debug = .false.
   dbgstr = ''
   call group_find('[Debug]', search_start, search_end)
@@ -248,6 +278,7 @@ subroutine read_config(er,erstr)
 
 
   ! search for Atoms (interaction parameters for umatrix)
+  !--------------------------------------------------------------------------------
   call group_find('[Atoms]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
     er = 5
@@ -259,6 +290,22 @@ subroutine read_config(er,erstr)
     erstr = 'Atoms Group empty'
     return
   endif
+
+  allocate(atom_dict(12))
+  ! defining dictionary (filling of atom_dict)
+  atom_dict(1)  = 'Interaction'
+  atom_dict(2)  = 'Nd'
+  atom_dict(3)  = 'Np'
+  atom_dict(4)  = 'Udd'
+  atom_dict(5)  = 'Vdd'
+  atom_dict(6)  = 'Jdd'
+  atom_dict(7)  = 'Upp'
+  atom_dict(8)  = 'Vpp'
+  atom_dict(9)  = 'Jpp'
+  atom_dict(10) = 'Udp'
+  atom_dict(11) = 'Vdp'
+  atom_dict(12) = 'Jdp'
+
   do ineq=1,nineq
     write(str_ineq,'(A2,I1,A2)') '[[',ineq,']]'
     call subgroup_find(str_ineq, search_start, search_end, subsearch_start, subsearch_end)
@@ -272,6 +319,15 @@ subroutine read_config(er,erstr)
       write(erstr,'("Atomnumber ", I1," subgroup empty")') ineq
       return
     endif
+    if ((ineq .eq. nineq) .and. (subsearch_end .ne. search_end)) then
+      er = 9
+      erstr = 'More Atom descriptions than provided in NAt'
+      return
+    endif
+
+    ! spell checking for General group
+    call spell_check(subsearch_start, subsearch_end, 'Atom', atom_dict, er, erstr)
+    if (er .ne. 0) return
 
     call string_find('Interaction',interaction(ineq),subsearch_start,subsearch_end)
     call int_find('Nd',ndims(ineq,1),subsearch_start,subsearch_end)
@@ -295,12 +351,13 @@ subroutine read_config(er,erstr)
         interaction_mode(ineq) = 0
     end select
   enddo
+  deallocate(atom_dict)
 
 
   ndim=sum(ndims)
 
   if (ndim .eq. 0) then
-    er = 9
+    er = 10
     erstr = 'Number of bands per atom is required in [Atoms] section'
     return
   endif
@@ -310,32 +367,53 @@ subroutine read_config(er,erstr)
 
 
   ! search for 1particle and 2particle files / parameters
+  !--------------------------------------------------------------------------------
   call group_find('[One-Particle]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
-    er = 10
+    er = 11
     erstr = 'One-Particle Group not found'
     return
   endif
   if (search_start .eq. -1) then ! group was not found
-    er = 11
+    er = 12
     erstr = 'One-Particle Group empty'
     return
   endif
+
+  allocate(oneparticle_dict(3))
+  oneparticle_dict(1) = '1PFile'
+  oneparticle_dict(2) = 'dmft-iter'
+  oneparticle_dict(3) = 'orb-sym'
+  call spell_check(search_start, search_end, 'One-particle', oneparticle_dict, er, erstr)
+  if (er .ne. 0) return
+  deallocate(oneparticle_dict)
+
   call string_find('1PFile', filename_1p, search_start, search_end)
   call string_find('dmft-iter', dmft_iter, search_start, search_end)
   call bool_find('orb-sym', orb_sym, search_start, search_end)
 
+  !--------------------------------------------------------------------------------
   call group_find('[Two-Particle]', search_start, search_end)
   if (search_start .eq. 0) then ! group was not found
-    er = 12
+    er = 13
     erstr= 'Two-Particle Group not found'
     return
   endif
   if (search_start .eq. -1) then ! group was not found
-    er = 13
+    er = 14
     erstr= 'Two-Particle Group empty'
     return
   endif
+  ! defining dictionary (filling of general_dict)
+  allocate(twoparticle_dict(4))
+  twoparticle_dict(1) = '2PFile'
+  twoparticle_dict(2) = 'vertex-type'
+  twoparticle_dict(3) = 'chi-loc-file'
+  twoparticle_dict(4) = 'threeleg-file'
+  call spell_check(search_start, search_end, 'Two-particle', twoparticle_dict, er, erstr)
+  if (er .ne. 0) return
+  deallocate(twoparticle_dict)
+
   call string_find('2PFile', filename_vertex_sym, search_start, search_end)
   call int_find('vertex-type', vertex_type, search_start, search_end)
 
@@ -353,8 +431,18 @@ subroutine read_config(er,erstr)
     external_threelegs = .true.
   endif
 
+  !--------------------------------------------------------------------------------
   call group_find('[Output]', search_start, search_end)
   if (search_start .gt. 0) then ! group was found -- this is an optional group
+    ! defining dictionary (filling of general_dict)
+    allocate(output_dict(3))
+    output_dict(1) = 'susc-full-output'
+    output_dict(2) = 'gzip-compression'
+    output_dict(3) = 'text-output'
+    call spell_check(search_start, search_end, 'Output', output_dict, er, erstr)
+    if (er .ne. 0) return
+    deallocate(output_dict)
+
     call bool_find('susc-full-output', susc_full_output, search_start, search_end)
     call int_find('gzip-compression', gzip_compression, search_start, search_end)
     call bool_find('text-output', text_output, search_start, search_end)
@@ -429,7 +517,7 @@ subroutine config_init(er,erstr)
   do i=-iwbmax_small,iwbmax_small
     iwb_data(i)=pi*2*i/beta
   end do
-  
+
 end subroutine config_init
 
 subroutine finalize()
@@ -441,6 +529,8 @@ end subroutine finalize
 subroutine check_freq_range(er)
   implicit none
   integer :: mpi_wrank, master, er
+
+  if (ounit .gt. 0) write(ounit,'(1x)')
 
   if (iwfmax_small .le. 0) then
     iwfmax_small = iwfmax
@@ -515,6 +605,8 @@ subroutine check_freq_range(er)
     endif
     return
   endif
+
+  if (ounit .gt. 0) write(ounit,'(1x)')
 
 end subroutine check_freq_range
 

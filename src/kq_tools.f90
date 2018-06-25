@@ -59,7 +59,7 @@ end subroutine generate_q_vol
 subroutine index_kq(ind)
   implicit none
   integer, intent(out) :: ind(nkp,nqp)
-  
+
   integer ikp,jkp
   ind = 0
 
@@ -68,7 +68,7 @@ subroutine index_kq(ind)
       ind(ikp,jkp)=k_minus_q(ikp,q_data(jkp))
     end do
   end do
-end subroutine index_kq 
+end subroutine index_kq
 
 subroutine index_kq_eom(ind)
   implicit none
@@ -82,7 +82,7 @@ subroutine index_kq_eom(ind)
       ind(ikp,jkp)=k_minus_q(k_data_eom(ikp),q_data(jkp))
     end do
   end do
-end subroutine index_kq_eom 
+end subroutine index_kq_eom
 
 ! The following function calculates the index of \vec{k} - \vec{q}.
 ! It uses only integers
@@ -91,7 +91,7 @@ end subroutine index_kq_eom
 ! k-space is assumed to have nkpx*nkpy*nkpz points
 ! q-space is assumed to have nqpx*nqpy*nqpz points,
 ! where each element of the q-space has to be an element of the k-space.
-! subtractions are done in integers, 
+! subtractions are done in integers,
 ! fold-back to BZ is achieved by modulo division.
 function k_minus_q(ik,iq)
   implicit none
@@ -153,7 +153,7 @@ subroutine qdata_from_file()
 
   iostatus=0
   open(unit=101,file=filename_qdata)
-  
+
   nqp=-1
   do while (iostatus.eq.0)
     read(101,*,iostat=iostatus) str_tmp
@@ -171,7 +171,7 @@ subroutine qdata_from_file()
     ! and assumed to be given in integer basis [0,nkpi-1]
     ! If neither of above is true, the coordinates are assumed to lie in the interval [0,1).
     read(101,*) qx,qy,qz
-    if (qx .eq. 0 .and. qy .eq. 0 .and. qz .eq. 0) then 
+    if (qx .eq. 0 .and. qy .eq. 0 .and. qz .eq. 0) then
       q_data(iq) = k_index(0,0,0) ! gamma point
     else if (qx .ge. 1 .or. qy .ge. 1 .or. qz .ge. 1) then
       q_data(iq) = k_index(int(qx),int(qy),int(qz)) ! cast to integers
@@ -195,7 +195,7 @@ subroutine kdata_from_file()
 
   iostatus=0
   open(unit=101,file=filename_kdata)
-  
+
   nkp_eom = -1
   do while (iostatus.eq.0)
     read(101,*,iostat=iostatus) str_tmp
@@ -207,7 +207,7 @@ subroutine kdata_from_file()
   open(unit=101,file=filename_kdata)
   do ik=1,nkp_eom
     read(101,*) kx,ky,kz
-    if (kx .eq. 0 .and. ky .eq. 0 .and. kz .eq. 0) then 
+    if (kx .eq. 0 .and. ky .eq. 0 .and. kz .eq. 0) then
       k_data_eom(ik) = k_index(0,0,0) ! gamma point
     else if (kx .ge. 1 .or. ky .ge. 1 .or. kz .ge. 1) then
       k_data_eom(ik) = k_index(int(kx),int(ky),int(kz)) ! cast to integers

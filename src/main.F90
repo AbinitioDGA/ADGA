@@ -52,6 +52,8 @@ program main
   complex(kind=8), allocatable :: chi0wFd_slice(:,:)
   complex(kind=8), allocatable ::  chi0wFm_slice(:,:), chi0wFd(:,:), chi0wFm(:,:), chi_loc(:,:)
   complex(kind=8), allocatable ::  oneplusgammawm(:,:), oneplusgammawd(:,:), gammawd(:,:), gammawm(:,:)
+  complex(kind=8), allocatable ::  gammawd_full(:,:,:), gammawm_full(:,:,:)
+  complex(kind=8), allocatable ::  gammawd_gather(:,:,:), gammawm_gather(:,:,:)
   complex(kind=8), allocatable :: chi_qw_dens(:,:,:),chi_qw_magn(:,:,:),bubble_nl(:,:,:),chi_qw_full(:,:,:)
   complex(kind=8), allocatable :: chi_loc_dens(:,:,:),chi_loc_magn(:,:,:),bubble_loc(:,:,:),bubble_loc_tmp(:,:)
   complex(kind=8), allocatable :: chi_loc_qmc(:,:,:)
@@ -86,7 +88,7 @@ program main
     call mpi_stop('The program has to be executed with exactly one argument. (Name of config file)')
   end if
 
-  ! read config settings 
+  ! read config settings
   call read_config(er,erstr)
   if (er .ne. 0) call mpi_stop(erstr,er)
 
@@ -114,7 +116,7 @@ program main
   endif
 
   ! check config settings
-  call check_config(er,erstr) 
+  call check_config(er,erstr)
   if (er .ne. 0) call mpi_stop(erstr,er)
 
 
@@ -148,7 +150,7 @@ program main
   if (mpi_wrank .eq. master) then
     ! generate a date-time string for output file name
     output_filename=trim(output_dir)//'adga-'//trim(date)//'-'//trim(time)//'-output.hdf5'
-    ! while the name is generated here to get the correct starting time, 
+    ! while the name is generated here to get the correct starting time,
     ! the file is created later, just before the beginning of the parallel loop.
     ! Thus, the parameters can be written immediately.
   end if
@@ -163,7 +165,7 @@ program main
   call check_freq_range(er)
   if (er .ne. 0) call mpi_stop('Frequency range error.')
 
-! after frequencies and dimensions are obtained, arrays can be allocated 
+! after frequencies and dimensions are obtained, arrays can be allocated
   allocate(siw(-iwmax:iwmax-1,ndim))
   allocate(giw(-iwmax:iwmax-1,ndim))
   allocate(dc(2,ndim)) ! indices: spin band
@@ -392,8 +394,8 @@ if (do_chi) then
   bubble_nl=0.d0
   bubble_loc=0.d0
   bubble_loc_tmp=0.d0
-  chi_loc_dens = 0
-  chi_loc_magn = 0
+  chi_loc_dens = 0.d0
+  chi_loc_magn = 0.d0
   if (external_chi_loc) then
      ! We read the local susceptibilities from file.
      if (ounit .ge. 1)  write(ounit,*) "Reading the local (frequency summed) susceptibilities from file."
@@ -445,6 +447,12 @@ end if
 
   nonlocal = .not. (debug .and. (index(dbgstr,"Onlydmft") .ne. 0)) ! Do the non-local quantities!
 
+  if (.not. nonlocal .and. verbose .and. (index(verbstr,"Gamma") .ne. 0)) then
+    allocate(gammawd_full(ndim2,maxdim,qwstart:qwstop), gammawm_full(ndim2,maxdim,qwstart:qwstop))
+    gammawd_full = 0.d0
+    gammawm_full = 0.d0
+  endif
+
   if (mpi_wrank .eq. master) then
     write(ounit,'(1x)')
     write(ounit,*) 'Writing hdf5 output to ',trim(output_filename)
@@ -469,7 +477,7 @@ end if
   iwb = iwbmax_small+3
   do iqw=qwstart,qwstop
      call cpu_time(start)
-     ! TIME: local 
+     ! TIME: local
      tstart = start
 
      update_chi_loc_flag = qw(1,iqw) .ne. iwb
@@ -495,13 +503,13 @@ end if
         enddo
         if (do_chi) then
            ! Use the big box
-           bubble_loc_tmp = 0 ! Initialize!
+           bubble_loc_tmp = 0.d0 ! Initialize!
            do iwf=iwstart,iwstop
               call get_chi0_loc(  iwf, iwb, chi0)
               bubble_loc_tmp = bubble_loc_tmp + chi0 ! Accumulate chi0 over iwf
               if (-iwfmax_small .le. iwf .and. iwf .le. iwfmax_small-1) chi0w(:,:,iwf) = chi0 ! only in the small box
            enddo
-           bubble_loc_tmp = bubble_loc_tmp/(beta**2) ! Nb: bubble_loc_tmp is also used to obtain bubble_nl = bubble^q - bubble^w 
+           bubble_loc_tmp = bubble_loc_tmp/(beta**2) ! Nb: bubble_loc_tmp is also used to obtain bubble_nl = bubble^q - bubble^w
            if (iq .eq. 1) bubble_loc(:,:,iwb) = bubble_loc(:,:,iwb) + bubble_loc_tmp ! Accumulate bubble_loc only when iq = 1.
         end if
 
@@ -530,7 +538,7 @@ end if
               i = i2+dum*ndim2 ! compound index (i2,iwf)
               chi0wFm(:,i) = chi0wFm(:,i)*chi0w_inv(i2,i2,iwf)
               chi0wFd(:,i) = chi0wFd(:,i)*chi0w_inv(i2,i2,iwf)
-              ! Remove the 1 
+              ! Remove the 1
               chi0wFm(i,i) = chi0wFm(i,i) - 1d0
               chi0wFd(i,i) = chi0wFd(i,i) - 1d0
            enddo
@@ -542,8 +550,7 @@ end if
         gammawd = 0.d0
 
         if (external_threelegs) then ! read gamma^w from external file
-          call read_threeleg(gammawm,'magn',iwb)
-          call read_threeleg(gammawd,'dens',iwb)
+          call read_threeleg(gammawd,gammawm,iwb)
 
         else ! calculate gamma^w=chi0^w.F^w
           do i1=1,ndim2
@@ -562,6 +569,41 @@ end if
         end if
 
 
+        ! master gathers and outputs the gamma array
+        if (verbose .and. (index(verbstr,"Gamma") .ne. 0) .and. .not. nonlocal) then
+          gammawd_full(:,:,iqw) = gammawd(:,:)
+          gammawm_full(:,:,iqw) = gammawm(:,:)
+
+          if (iqw .eq. qwstop) then
+
+            if (mpi_wrank .eq. master) then
+              allocate(gammawd_gather(ndim2,maxdim,2*iwbmax_small+1))
+              allocate(gammawm_gather(ndim2,maxdim,2*iwbmax_small+1))
+            else
+              allocate(gammawd_gather(1,1,1))
+              allocate(gammawm_gather(1,1,1))
+            endif
+#ifdef MPI
+            ! multiply rct and displ with maxdim/ndim2 because of the way they are defined in mpi_org
+            call MPI_gatherv(gammawd_full,(qwstop-qwstart+1)*ndim2*maxdim, &
+                 MPI_DOUBLE_COMPLEX, gammawd_gather, rct*maxdim/ndim2, disp*maxdim/ndim2, &
+                 MPI_DOUBLE_COMPLEX, master, MPI_COMM_WORLD, ierr)
+            call MPI_gatherv(gammawm_full,(qwstop-qwstart+1)*ndim2*maxdim, &
+                 MPI_DOUBLE_COMPLEX, gammawm_gather, rct*maxdim/ndim2, disp*maxdim/ndim2, &
+                 MPI_DOUBLE_COMPLEX, master, MPI_COMM_WORLD, ierr)
+#else
+            gammawd_gather = gammawd_full
+            gammawm_gather = gammawm_full
+#endif
+            if (mpi_wrank .eq. master) then
+              call output_gamma(output_filename, gammawd_gather, 0)
+              call output_gamma(output_filename, gammawm_gather, 1)
+            endif
+            deallocate(gammawd_gather, gammawm_gather)
+          endif
+        endif
+
+
 
         ! Add the identity to gamma^w (intermediate quantity used in several equations)
         oneplusgammawm = gammawm
@@ -576,11 +618,11 @@ end if
 
      endif !update local quantities
 
-     
+
      call cpu_time(tfinish) ! TIME: local
      timings(1) = timings(1) + tfinish - tstart
      tstart = tfinish ! TIME: eom
-   
+
      ! Calculate static quantities
      if (do_eom .and. iwb .eq. 0 .and. (iq .eq. 1 .or. do_vq)) then
        call calc_eom_static(kq_ind_eom,iq,v,sigma_dmft,sigma_hf,nonlocal)
@@ -589,7 +631,7 @@ end if
      if (do_eom .and. iq .eq. 1) call calc_eom_dmft(gammawd,gammawm,iwb,sigma_dmft)
      call cpu_time(tfinish) ! TIME: eom
      timings(6) = timings(6) + tfinish - tstart
-     tstart = tfinish ! TIME: chi0 
+     tstart = tfinish ! TIME: chi0
 
      if (nonlocal) then
       ! Calculate chi0q in the big box (which has the same size as the small box when do_chi = .false.)
@@ -673,7 +715,7 @@ end if
       timings(3) = timings(3) + tfinish - tstart
       tstart = tfinish ! TIME: inv
 
-      ! We need to add the identity before the inversion: 
+      ! We need to add the identity before the inversion:
       ! bigwork_dens = [1 - chi0^{nl,q}.F^w_d - 2*beta^{-2}*chi0^q.v^q.(1 + gamma^w)]
       ! bigwork_magn = [1 - chi0^{nl,q}.F^w_m ]
       do i=1,maxdim
@@ -686,7 +728,7 @@ end if
       call inverse_matrix(bigwork_magn,erstr,er)
       if (er .ne. 0) call mpi_stop(erstr,er)
 
-      ! We need to subtract the identity before the multiplication from the left with (1 + gamma^w): 
+      ! We need to subtract the identity before the multiplication from the left with (1 + gamma^w):
       do i=1,maxdim
          bigwork_dens(i,i) = bigwork_dens(i,i) - 1d0
          bigwork_magn(i,i) = bigwork_magn(i,i) - 1d0
@@ -723,7 +765,7 @@ end if
       end if
       if (do_eom) then
          !equation of motion
-         call calc_eom_dynamic(etaqd,etaqm,gammawd,gammaqd,kq_ind_eom,iwb,iq,v,sigma_nl) 
+         call calc_eom_dynamic(etaqd,etaqm,gammawd,gammaqd,kq_ind_eom,iwb,iq,v,sigma_nl)
          ! TIME: eom
          call cpu_time(tfinish)
          timings(6) = timings(6) + tfinish - tstart
@@ -734,11 +776,11 @@ end if
 
      !Output the calculation progress
      if (ounit .gt. 0 .and. .not. (verbose .and. (index(verbstr,"Noprogress") .ne. 0))) then
-      if (mod(iqw-qwstart,max((qwstop-qwstart)/10,2)) .eq. 0) then
+      ! if (mod(iqw-qwstart,max((qwstop-qwstart)/10,2)) .eq. 0) then
          write(ounit,'(1x,"Core:",I5,"  Completed qw-point: ",I7," (from ",I7," to ",I7,")  Time per point: ",F8.4)') &
                mpi_wrank, iqw, qwstart, qwstop, finish-start
          call flush(ounit)
-      endif
+      ! endif
      endif
   enddo !iqw
   if (ounit .ge. 1) then
@@ -753,14 +795,14 @@ end if
 #ifdef MPI
      if (ounit .ge. 1) then
        write(ounit,'(1x,"TIME: Wall time per qw-point: (Rank ",i6,")")') mpi_wrank
-       write(ounit,'(1x,"       Local,       Chi0,     Gammas,  Inversion,   Eta rest,        EOM,        Chi")') 
+       write(ounit,'(1x,"       Local,       Chi0,     Gammas,  Inversion,   Eta rest,        EOM,        Chi")')
        write(ounit,'(1x,7f12.5)') timings/(qwstop-qwstart+1)
      endif
      call MPI_allreduce(MPI_IN_PLACE,timings,size(timings), MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
 #endif
      if (ounit .ge. 1) then
        write(ounit,'(1x,"TIME: Wall time per qw-point:")')
-       write(ounit,'(1x,"       Local,       Chi0,     Gammas,  Inversion,   Eta rest,        EOM,        Chi")') 
+       write(ounit,'(1x,"       Local,       Chi0,     Gammas,  Inversion,   Eta rest,        EOM,        Chi")')
        write(ounit,'(1x,7f12.5)') timings/(nqp*(2*iwbmax_small+1))
        write(ounit,'(1x)')
        call flush(ounit)
@@ -790,7 +832,7 @@ end if
           MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
      call MPI_reduce(sigma_hf,sigma_sum_hf,ndim*ndim*nkp_eom, &
           MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
-     call MPI_reduce(sigma_dmft,sigma_sum_dmft,ndim*ndim*2*iwfmax_small,&
+     call MPI_reduce(sigma_dmft,sigma_sum_dmft,ndim*ndim*2*iwfmax_small, &
           MPI_DOUBLE_COMPLEX, MPI_SUM, master, MPI_COMM_WORLD, ierr)
 #else
      sigma_sum = sigma_nl
@@ -803,12 +845,12 @@ end if
        gloc = 0
        sigma_loc = 0
        if (verbose .and. (index(verbstr,"Test") .ne. 0)) then
-         write(ounit,'(1x,"Orbital trace of the self-energy at the first negative and positive matsubara: (Re,Im),(Re,Im)")') 
+         write(ounit,'(1x,"Orbital trace of the self-energy at the first negative and positive matsubara: (Re,Im),(Re,Im)")')
          write(ounit,'(1x,"Tr[QMC Self-energy]:         ",4f24.11)') sum((/(siw(-1,i),i=1,ndim)/)),sum((/(siw(0,i),i=1,ndim)/))
          write(ounit,'(1x,"Tr[Local Self-energy]:       ",4f24.11)') sum( (/ (sigma_sum_dmft(i,i,-1),i=1,ndim) /) ), &
                                                                     sum( (/ (sigma_sum_dmft(i,i,0),i=1,ndim) /) )
          write(ounit,'(1x,"Tr[Non-local Self-energy]:   ",4f24.11)') sum( (/ (sigma_sum(i,i,-1,1),i=1,ndim) /) ), &
-                                                                    sum( (/ (sigma_sum(i,i,0,1),i=1,ndim) /) ) 
+                                                                    sum( (/ (sigma_sum(i,i,0,1),i=1,ndim) /) )
        endif
        call add_siw_dmft(sigma_sum)  !add the dmft-selfenergy
        if (nonlocal .and. .not. k_path_eom) then
@@ -819,7 +861,7 @@ end if
                                                                     sum( (/ (sigma_sum(i,i,0,1),i=1,ndim) /) )
          write(ounit,'(1x,"Tr[Total local Self-energy]: ",4f24.11)') sum( (/ (sigma_loc(i,i,-1),i=1,ndim) /) ), &
                                                                      sum( (/ (sigma_loc(i,i,0),i=1,ndim) /) )
-         write(ounit,'(1x,"Tr[QMC Greens function]:     ",4f24.11)') sum((/(giw(-1,i),i=1,ndim)/)),sum((/(giw(0,i),i=1,ndim)/)) 
+         write(ounit,'(1x,"Tr[QMC Greens function]:     ",4f24.11)') sum((/(giw(-1,i),i=1,ndim)/)),sum((/(giw(0,i),i=1,ndim)/))
          write(ounit,'(1x,"Tr[Local Greens function]:   ",4f24.11)') sum((/(gloc(-1,i,i),i=1,ndim)/)),&
                                                                     sum((/(gloc(0,i,i),i=1,ndim)/))
          write(ounit,'(1x)')
@@ -880,12 +922,12 @@ end if
          chi_loc_magn = chi_loc_magn + bubble_loc
       endif
       if (verbose .and. (index(verbstr,"Test") .ne. 0)) then
-         write(ounit,'(1x,"Orbital sum of the local susceptibilities at w = 0:")') 
-         write(ounit,'(1x,"Sum Chi_0^w:            ",2f12.7)') & 
+         write(ounit,'(1x,"Orbital sum of the local susceptibilities at w = 0:")')
+         write(ounit,'(1x,"Sum Chi_0^w:            ",2f12.7)') &
                sum((/((bubble_loc(i+(i-1)*ndim,j+(j-1)*ndim,0),i=1,ndim),j=1,ndim)/))
-         write(ounit,'(1x,"Sum Chi_d^w:            ",2f12.7)') & 
+         write(ounit,'(1x,"Sum Chi_d^w:            ",2f12.7)') &
                sum((/((chi_loc_dens(i+(i-1)*ndim,j+(j-1)*ndim,0),i=1,ndim),j=1,ndim)/))
-         write(ounit,'(1x,"Sum Chi_m^w:            ",2f12.7)') & 
+         write(ounit,'(1x,"Sum Chi_m^w:            ",2f12.7)') &
                sum((/((chi_loc_magn(i+(i-1)*ndim,j+(j-1)*ndim,0),i=1,ndim),j=1,ndim)/))
          write(ounit,'(1x)')
          call flush(ounit)
@@ -928,7 +970,7 @@ end if
       if (mpi_wrank .eq. master) then
         ! call output_chi_qw(chi_qw_full,qw,'bubble_nl.dat')
         if (verbose .and. (index(verbstr,"Test") .ne. 0)) then
-           write(ounit,'(1x,"Orbital sum of non-local Chi0 at w = 0 and first q-point (nl = purely non-local):")') 
+           write(ounit,'(1x,"Orbital sum of non-local Chi0 at w = 0 and first q-point (nl = purely non-local):")')
            write(ounit,'(1x,"Sum Chi_0^q  - Chi_0^w: ",2f12.7)') &
                  sum((/((chi_qw_full(i+(i-1)*ndim,j+(j-1)*ndim,iwbmax_small*nqp+1),i=1,ndim),j=1,ndim)/))
            call flush(ounit)
@@ -973,7 +1015,7 @@ end if
               call flush(ounit)
            endif
            ! Print to file
-           if (index(verbstr,"Hdf5") .ne. 0) then 
+           if (index(verbstr,"Hdf5") .ne. 0) then
              if (susc_full_output) then
                if (q_vol) then
                  call output_chi_qw_full_h5(output_filename,'dens-nl',chi_qw_full)
@@ -1050,7 +1092,7 @@ end if
               call flush(ounit)
            endif
            ! Print to file
-           if (index(verbstr,"Hdf5") .ne. 0) then 
+           if (index(verbstr,"Hdf5") .ne. 0) then
              if (susc_full_output) then
                if (q_vol) then
                  call output_chi_qw_full_h5(output_filename,'magn-nl',chi_qw_full)

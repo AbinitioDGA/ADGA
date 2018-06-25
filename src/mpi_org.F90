@@ -121,7 +121,7 @@ module mpi_org
    logical                             :: unitopened ! tells if the file unit is open
       inquire(unit=ounit,opened=unitopened)
       if (unitopened) call flush(ounit)
-#if MPI 
+#if MPI
       write(fancynr,'(i5)') mpi_wrank
       if (.not. present(mpi_er)) then
          if (present(er)) then

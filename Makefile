@@ -8,7 +8,7 @@
 # The arXiv publication can be found at
 # https://arxiv.org/abs/1710.06651
 #
-# Copyright (C) <2017, 2018> 
+# Copyright (C) <2017, 2018>
 # <Anna Galler, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-all: binR abinitiodga make_config 
+all: binR abinitiodga make_config
 
 make_config:
 	cd make_configs/;./make_config_auto.sh

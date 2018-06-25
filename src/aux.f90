@@ -51,7 +51,7 @@ module aux
 !================================================================================
   subroutine get_orb_sym(b1, b2, b3, b4, nbands, ntot, ind_band_list)
     implicit none
-    
+
     integer, intent(in) :: b1, b2, b3, b4, nbands
     integer,intent(out) :: ntot
     integer,intent(out) :: ind_band_list(:)
@@ -59,7 +59,7 @@ module aux
 
     if ((b1==b2) .and. (b2==b3) .and. (b3==b4)) then
        ntot = nbands
-       
+
        do i=1,nbands
           call component2index_band(nbands, ind_band, i, i, i, i)
           ind_band_list(i) = ind_band
@@ -72,10 +72,10 @@ module aux
           do j=1,nbands
              if (i .ne. j) then
                 ind_band = -1
-          
+
                 if((b1==b2) .and. (b3==b4) .and. (b1 .ne. b3)) then
                    call component2index_band(nbands, ind_band, i, i, j, j)
-                   
+
                 else if((b1==b3) .and. (b2==b4) .and. (b1 .ne. b2)) then
                    call component2index_band(nbands, ind_band, i, j, i, j)
 
@@ -127,7 +127,7 @@ module aux
     integer :: g1,g2,g3,g4
 
     ! the proposed back conversion assumes the indices are
-    ! given form 0 to max-1  
+    ! given form 0 to max-1
     ind_tmp = ind - 1
     tmp1 = 8*Nbands**3
     tmp2 = 4*Nbands**2

@@ -16,11 +16,11 @@ N4iwb     = (default = -1)            # number of bosonic frequencies of the ver
  #                                                                |
  # frequency/orbital notation: Chi^{w v v'}_{l m m' l'} =         |
  #                                                                |
- #      v,l _______ v,l'         v,l  _____________ v',l'         |
- #                                      |       |                 |
- #  -                      +            |       |                 |
- #                                      |       |                 |
- #    v-w,m _______ v-w,m'     v-w,m  __|_______|__ v'-w,m'       |
+ #      v,l ___<___ v,l'         v,l  _<___________<_ v',l'       |
+ #                                       |       |                |
+ #  -                      +             |       |                |
+ #                                       |       |                |
+ #    v-w,m ___>___ v-w,m'     v-w,m  _>_|_______|_>_ v'-w,m'     |
  #                                                                |
  #________________________________________________________________|
 
@@ -28,7 +28,9 @@ HkFile = (default = '')               # Wannier hamiltonian - optional
                                       # if not provided we extract it from the w2dynamics 1PFile
 VqFile = (default = '')               # V(q) file for fully non-local interactions - optional
                                       # currently only implemented for 1 impurity
-QDataFile = (default= '')             # Q-points text file for susc-path calculations -- see qpath_template - optional
+QDataFile = (default = '')            # Q-points text file for susc-path calculations -- see qpath_template - optional
+KDataFile = (default = '')            # K-points text file for k-path calculations -- same format as QDataFile
+                                      # this option only affects the EOM calculation
 
 k-grid = (default = 0 0 0)            # 3 integers seperated by a space (hamiltonian k-grid) - mandatory
 q-grid = (default = 0 0 0)            # 3 integers seperated by a space (calculation q-grid) - mandatory
@@ -43,6 +45,7 @@ ________________________________________________________________________________
 [Atoms]
 [[__many__]]                          # as many groups as NAt ( [[1]], [[2]], ...)
 Interaction = (default = 'Density')   # 'Kanamori' or 'Density' are the only ones implemented
+                                      # 'Density' is referring to the SU(2) symmetric dd-interaction without J
 Nd =  (default = 0)                   # number of d-orbitals - mandatory
 Np =  (default = 0)                   # number of p-orbitals - mandatory
 Udd = (default = 0)                   # use these values if UFile is left blank
@@ -79,10 +82,12 @@ susc-full-output = (default = F)      # default output depends on 2 of the 4 leg
 gzip-compression = (default = 4)      # gzip compression level in the hdf5 output of the large datasets
                                       # values of 0 to 9 are allowed
 text-output = (default = F)           # default output only produces the hdf5 data output
-                                 
+
 ________________________________________________________________________________
 [Verbose]                             # Verbose flag (Add keywords to produce more output)
-                                      # Current verbose keywords: Output, Extra, Umatrix, Time, Kpoints, Noprogress, Test, Mpi, Dmft
+                                      # Current verbose keywords:
+                                      # Output, Extra, Hdf5, Umatrix, Time, Kpoints
+                                      # Allprogress, Noprogress, Test, Mpi, Dmft, Gamma
 ________________________________________________________________________________
 [Debug]                               # Debug flag (Add keywords to change the way the calculation is performed, i.e. "Experts Only")
                                       # Current debug keywords: Onlydmft, Bubble, Dmft_phbar, Makegiw

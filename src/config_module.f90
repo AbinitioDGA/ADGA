@@ -500,11 +500,11 @@ subroutine config_init(er,erstr)
     endif
   end if
 
-  if ((.not. do_eom) .and. (.not. do_chi)) then
-    er = 4
-    erstr = 'all run options disabled'
-    return
-  endif
+  !if ((.not. do_eom) .and. (.not. do_chi)) then
+  !  er = 4
+  !  erstr = 'all run options disabled'
+  !  return
+  !endif
 
   ! create arrays with Matsubara frequencies
   allocate(iw_data(-iwmax:iwmax-1),iwb_data(-iwbmax_small:iwbmax_small),iwf_data(-iwfmax_small:iwfmax_small-1))

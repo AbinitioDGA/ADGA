@@ -270,6 +270,50 @@ program main
 !compute k-dependent filling for Fock-term (computed in the EOM):
   call get_nfock() ! writes n_fock.dat
 
+  if (ounit .ge. 1) then
+    write(ounit,'(1x)')
+    if (.not. do_vq) then
+      write(ounit,*) 'Running the calculation without V(q)'
+    else
+      write(ounit,*) 'Running the calculation with V(q)'
+      write(ounit,*) 'V(q) data in ', filename_vq
+    endif
+    write(ounit,'(1x)')
+    write(ounit,'(1x,"Frequency information:")')
+    write(ounit,*) 'iwmax=', iwmax, ' (number of fermionic matsubara frequencies of one-particle quantities)'
+    write(ounit,*) 'iwfmax=', iwfmax, 'iwfmax_small=', iwfmax_small,&
+               ' (number of fermionic matsubara frequencies of two-particle quantities)'
+    write(ounit,*) 'iwbmax=',iwbmax, 'iwbmax_small=', iwbmax_small, &
+               ' (number of bosonic matsubara frequencies of two-particle quantities)'
+    write(ounit,'(1x)')
+    write(ounit,'(1x,"k-point information:")')
+    write(ounit,*) nkp,'k-points in the mesh'
+    if (q_vol) then
+      write(ounit,*) nqp,'q-points in the mesh'
+    else
+      write(ounit,*) nqp,'q-points in the q-path'
+    end if
+    if (do_eom) then
+      if (k_path_eom) then
+        write(ounit,*) nkp_eom, 'k-points in the k-path for the eom calculation'
+      else
+        write(ounit,*) nkp_eom, 'k-points in the mesh for the eom calculation'
+      endif
+    endif
+    write(ounit,'(1x)')
+  end if
+
+! End here if calc-eom and calc-chi are both false.
+  if (.not. (do_eom .or. do_chi)) then
+     if (ounit .ge. 1) then
+         write(ounit,'(1x)')
+         write(ounit,'(1x,"End of Program (To continue set calc-eom or calc-chi to true)")')
+     endif
+     close(ounit)
+     call mpi_close()
+     stop
+  endif
+
   ! small arrays
   allocate(v(ndim2,ndim2))
   allocate(smallwork(ndim2,ndim2))
@@ -309,42 +353,6 @@ program main
     allocate(q_data(nqp))
     call generate_q_vol(nqpx,nqpy,nqpz,q_data)
   endif
-
-
-
-  if (ounit .ge. 1) then
-    write(ounit,'(1x)')
-    if (.not. do_vq) then
-      write(ounit,*) 'Running the calculation without V(q)'
-    else
-      write(ounit,*) 'Running the calculation with V(q)'
-      write(ounit,*) 'V(q) data in ', filename_vq
-    endif
-    write(ounit,'(1x)')
-    write(ounit,'(1x,"Frequency information:")')
-    write(ounit,*) 'iwmax=', iwmax, ' (number of fermionic matsubara frequencies of one-particle quantities)'
-    write(ounit,*) 'iwfmax=', iwfmax, 'iwfmax_small=', iwfmax_small,&
-               ' (number of fermionic matsubara frequencies of two-particle quantities)'
-    write(ounit,*) 'iwbmax=',iwbmax, 'iwbmax_small=', iwbmax_small, &
-               ' (number of bosonic matsubara frequencies of two-particle quantities)'
-    write(ounit,'(1x)')
-    write(ounit,'(1x,"k-point information:")')
-    write(ounit,*) nkp,'k-points in the mesh'
-    if (q_vol) then
-      write(ounit,*) nqp,'q-points in the mesh'
-    else
-      write(ounit,*) nqp,'q-points in the q-path'
-    end if
-    if (do_eom) then
-      if (k_path_eom) then
-        write(ounit,*) nkp_eom, 'k-points in the k-path for the eom calculation'
-      else
-        write(ounit,*) nkp_eom, 'k-points in the mesh for the eom calculation'
-      endif
-    endif
-    write(ounit,'(1x)')
-  end if
-
 
   ! calculate the index of all \vec{k} - \vec{q}
   allocate(kq_ind(nkp,nqp)) ! full k-grid -- for chi k summation
@@ -462,7 +470,7 @@ end if
   if (ounit .gt. 0) then
     write(ounit,'(1x)')
     if (nonlocal) then
-       write(ounit,*) "Starting the main loop:"
+       write(ounit,*) "Starting the main loop: qw-point interval =",qwstart,qwstop
     else
        write(ounit,*) "Starting the main loop: (Debug: Only local quantities are calculated!)"
     endif
@@ -776,11 +784,17 @@ end if
 
      !Output the calculation progress
      if (ounit .gt. 0 .and. .not. (verbose .and. (index(verbstr,"Noprogress") .ne. 0))) then
-      ! if (mod(iqw-qwstart,max((qwstop-qwstart)/10,2)) .eq. 0) then
+       if (verbose .and. (index(verbstr,"Allprogress")) .ne. 0) then
          write(ounit,'(1x,"Core:",I5,"  Completed qw-point: ",I7," (from ",I7," to ",I7,")  Time per point: ",F8.4)') &
                mpi_wrank, iqw, qwstart, qwstop, finish-start
          call flush(ounit)
-      ! endif
+       else
+         if (mod(iqw-qwstart,max((qwstop-qwstart)/10,2)) .eq. 0) then
+           write(ounit,'(1x,"Core:",I5,"  Completed qw-point: ",I7," (from ",I7," to ",I7,")  Time per point: ",F8.4)') &
+                 mpi_wrank, iqw, qwstart, qwstop, finish-start
+           call flush(ounit)
+         endif
+       endif
      endif
   enddo !iqw
   if (ounit .ge. 1) then

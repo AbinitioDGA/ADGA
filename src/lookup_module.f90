@@ -214,7 +214,7 @@ module lookup_module
         endif
       enddo
       if (er .ne. 0) then
-        erstr = 'Spelling error in '//trim(grname)//' group: '//str_temp
+        erstr = 'Spelling error or unknown variable in '//trim(grname)//' group: '//str_temp
         return
       endif
     enddo

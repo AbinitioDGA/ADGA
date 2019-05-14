@@ -8,7 +8,7 @@
 # The arXiv publication can be found at
 # https://arxiv.org/abs/1710.06651
 #
-# Copyright (C) <2017, 2018>
+# Copyright (C) <2017-2019>
 # <Anna Galler, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 #
 # This program is free software; you can redistribute it and/or modify

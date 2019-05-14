@@ -11,7 +11,7 @@
 # The arXiv publication can be found at
 # https://arxiv.org/abs/1710.06651
 #
-# Copyright (C) <2017, 2018>
+# Copyright (C) <2017-2019>
 # <Anna Galler*, Patrick Thunstr\"om, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 # * Corresponding author. E-mail address: galler.anna@gmail.com
 #
@@ -42,12 +42,12 @@ dset_magn = f['susceptibility/nonloc/magn'][()]
 fig = plt.figure()
 
 ax1 = fig.add_subplot(211)
-plt.plot(np.sum(dset_dens[:,:,:,0].real, axis=(0,1)))
+plt.plot(2*np.sum(dset_dens[:,:,:,0].real, axis=(0,1)))
 ax1.set_ylabel(r'$\chi_D(\mathbf{q},\omega=0)$')
 plt.xticks([0,10,20,30,40],[r'$\Gamma$','$X$','$M$','$R$',r'$\Gamma$'])
 
 ax2 = fig.add_subplot(212)
-plt.plot(np.sum(dset_magn[:,:,:,0].real, axis=(0,1)))
+plt.plot(2*np.sum(dset_magn[:,:,:,0].real, axis=(0,1)))
 ax2.set_ylabel(r'$\chi_M(\mathbf{q},\omega=0)$')
 plt.xticks([0,10,20,30,40],[r'$\Gamma$','$X$','$M$','$R$',r'$\Gamma$'])
 

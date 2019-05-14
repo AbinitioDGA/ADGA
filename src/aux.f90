@@ -9,7 +9,7 @@
 ! The arXiv publication can be found at
 ! https://arxiv.org/abs/1710.06651
 !
-! Copyright (C) <2017, 2018>
+! Copyright (C) <2017-2019>
 ! <Anna Galler*, Patrick Thunström, Josef Kaufmann, Matthias Pickem, Jan M. Tomczak, Karsten Held>
 ! * Corresponding author. E-mail address: galler.anna@gmail.com
 !

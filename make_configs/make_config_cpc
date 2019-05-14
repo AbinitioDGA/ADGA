@@ -1,0 +1,9 @@
+F90       = mpiifort
+FPPFLAGS  = -DMPI
+FFLAGS    = -O3
+FINCLUDE  = -I/opt/hdf5-1.8.16_gcc/include/
+
+LD        = $(F90)
+LDFLAGS   = -I/opt/hdf5-1.8.16_gcc/include/ -L/opt/hdf5-1.8.16_gcc/lib/
+LDFLAGS  += -lhdf5_fortran -lhdf5hl_fortran -llapack -lblas -limf
+LDINCLUDE = -L/opt/hdf5-1.8.16_gcc/lib/

@@ -1,33 +1,26 @@
 [General]
-# calculate the momentum-dependent susceptibilities
-calc-susc = T
-calc-eom  = F # must be turned off for q-path calculation
+calc-susc = T # calculate the momentum-dependent susceptibilities
+calc-eom  = F # calculate the dga-selfenergy via the equation of motion
+
+# number of positive f/b frequencies used from the vertex
+N4iwf = -1 # full fermionic box
+N4iwb = 0  # only iwn = 0
 
 NAt = 1 # Number of atoms
 
-# number of positive f/b frequencies used form the vertex
-N4iwf = -1 # full fermionic box
-N4iwb = 0 # only at w=0
-
-# General Files
 HkFile = srvo3_k20.hk # Wannier Hamiltonian
 
-k-grid = 20 20 20 # Wannier Hamiltonian and eom grid -- must be fixed at all times
-# q-grid = 20 20 20 -- this gets ignored if we run with QDataFile
+k-grid = 20 20 20 # Wannier Hamiltonian momentum grid
+QDataFile = qpath
 
-QDataFile = qpath_template
-# this file can be found in documentation/examples/qpath_template
-
-Output = output-qpath
-
-[Atoms] # fully local interaction parameters
+[Atoms]
 [[1]]
-Interaction = Kanamori
+Interaction = Kanamori # interaction type
 Nd = 3 # number of d-bands
 Np = 0 # number of p-bands
-Udd = 5.0
-Vdd = 3.5
-Jdd = 0.75
+Udd = 5.0 # intra-orbital interaction
+Vdd = 3.5 # inter-orbital interaction
+Jdd = 0.75 # Hund’s coupling
 
 [One-Particle]
 1PFile = srvo3-1pg.hdf5 # DMFT 1PG
@@ -35,7 +28,4 @@ orb-sym = T
 
 [Two-Particle]
 2PFile = srvo3-2pg-symmetrized.hdf5 # symmetrized vertex
-vertex-type = 0 # 0: 2PGF, 1: chi_con, 2: chi
-
-[Output]
-text-output = T # additionally output the data in form of text-files
+vertex-type = 0

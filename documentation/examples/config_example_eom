@@ -1,28 +1,26 @@
 [General]
-# calculate the momentum-dependent susceptibilities
-calc-susc = T
-# calculate the dga-selfenergy via the equation of motion
-calc-eom  = T
-
-NAt = 1 # Number of atoms
+calc-susc = T # calculate the momentum-dependent susceptibilities
+calc-eom  = T # calculate the dga-selfenergy via the equation of motion
 
 # number of positive f/b frequencies used from the vertex
 N4iwf = -1 # full box
 N4iwb = -1 # full box
 
+NAt = 1 # Number of atoms
+
 HkFile = srvo3_k20.hk # Wannier Hamiltonian
 
-k-grid = 20 20 20 # Wannier Hamiltonian and eom grid -- must be fixed at all times
-q-grid = 20 20 20 # Grid we run our calculation on and susc grid
+k-grid = 20 20 20 # Wannier Hamiltonian and eom momentum grid
+q-grid = 20 20 20 # Grid for susc, and q-sum in eom
 
 [Atoms]
 [[1]]
-Interaction = Kanamori
+Interaction = Kanamori # interaction type
 Nd = 3 # number of d-bands
 Np = 0 # number of p-bands
-Udd = 5.0
-Vdd = 3.5
-Jdd = 0.75
+Udd = 5.0 # intra-orbital interaction
+Vdd = 3.5 # inter-orbital interaction
+Jdd = 0.75 # Hund’s coupling
 
 [One-Particle]
 1PFile = srvo3-1pg.hdf5 # DMFT 1PG
@@ -30,7 +28,4 @@ orb-sym = T
 
 [Two-Particle]
 2PFile = srvo3-2pg-symmetrized.hdf5 # symmetrized vertex
-vertex-type = 0 # 0: 2PGF, 1: chi_con, 2: chi
-
-[Output]
-text-output = T # additionally output the data in form of text-files
+vertex-type = 0

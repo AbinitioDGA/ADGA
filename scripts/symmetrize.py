@@ -100,17 +100,17 @@ def ask_for_input():
   conf['outfile']=filename_sym
   return conf
 
-def get_groups(infile='infile.hdf5',Nbands=[1],target=1,nineq=1,**kwargs):
+def get_groups(infile='infile.hdf5',Nbands=[1],target=1,nineq=1,worm_group='worm-last',**kwargs):
   groups=[]
   bgroups=[]
   for ineq in xrange(nineq):
     f=h5py.File(infile,'r')
     if target=='1freq_b':
-      gr_str=f['worm-last/ineq-{:03}/p2iw-worm'.format(ineq+1)].keys()
+      gr_str=f['{}/ineq-{:03}/p2iw-worm'.format(worm_group, ineq+1)].keys()
     elif target=='2freq':
-      gr_str=f['worm-last/ineq-{:03}/p3iw-worm'.format(ineq+1)].keys()
+      gr_str=f['{}/ineq-{:03}/p3iw-worm'.format(worm_group, ineq+1)].keys()
     elif target=='3freq':
-      gr_str=f['worm-last/ineq-{:03}/g4iw-worm'.format(ineq+1)].keys()
+      gr_str=f['{}/ineq-{:03}/g4iw-worm'.format(worm_group, ineq+1)].keys()
 
     if len(gr_str) != 6*(3*Nbands[ineq]**2-2*Nbands[ineq]):
       print('WARNING: ineq-{:03} - Number of groups is not consistent with Kanamori interaction'.format(ineq+1))
@@ -244,7 +244,7 @@ def get_symgroups(ch,gr,sy,nd,**kwargs):
 
   return action,symgroups
 
-def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=None,n4iwb=None,**kwargs):
+def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=None,n4iwb=None,worm_group='worm-last',**kwargs):
   if channel=='dens':
     prefactor = 2.0
   elif channel=='magn':
@@ -254,7 +254,7 @@ def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=
     sys.exit()
 
   if target=='1freq_b':
-    x = h5in['worm-last/ineq-{:03}/p2iw-worm/{:05}/value'.format(ineq+1,igr)].value/float(prefactor*len(symgroups))
+    x = h5in['{}/ineq-{:03}/p2iw-worm/{:05}/value'.format(worm_group, ineq+1,igr)].value/float(prefactor*len(symgroups))
     for gr in symgroups:
       if action=='+':
         h5out['ineq-{:03}/{}/{:05}'.format(ineq+1,channel,gr)][...]+=x
@@ -263,7 +263,7 @@ def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=
       elif action=='0':
         pass
   elif target=='2freq':
-    x = h5in['worm-last/ineq-{:03}/p3iw-worm/{:05}/value'.format(ineq+1,igr)].value/float(prefactor*len(symgroups))
+    x = h5in['{}/ineq-{:03}/p3iw-worm/{:05}/value'.format(worm_group, ineq+1,igr)].value/float(prefactor*len(symgroups))
     for iwb in xrange(2*n3iwb+1):
       for gr in symgroups:
         if action=='+':
@@ -273,7 +273,7 @@ def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=
         elif action=='0':
           pass
   elif target=='3freq':
-    x = h5in['worm-last/ineq-{:03}/g4iw-worm/{:05}/value'.format(ineq+1,igr)].value/float(prefactor*len(symgroups))
+    x = h5in['{}/ineq-{:03}/g4iw-worm/{:05}/value'.format(worm_group, ineq+1,igr)].value/float(prefactor*len(symgroups))
     for iwb in xrange(2*n4iwb+1):
       for gr in symgroups:
         if action=='+':
@@ -284,49 +284,72 @@ def read_and_add(h5in,h5out,ineq,igr,channel,action,symgroups,target=None,n3iwb=
           pass
 
 
+# we provide the full dictionary and not just the kwargs!
+def main(conf):
+  print conf
+  check_sym(**conf)
+  f1=h5py.File(conf['infile'],'r')
 
-#===============================================================================
-#================================ Script start =================================
-#===============================================================================
+  if conf['target']=='1freq_f': # we do this completely seperate since we only have to do sume numpy magic
+    copyfile(conf['infile'],conf['outfile'])
+    f2=h5py.File(conf['outfile'],'r+')
+    for ineq in xrange(conf['nineq']):
+      f2['dmft-last/ineq-{:03}/giw_unsymmetrized'.format(ineq+1)] = f2['dmft-last/ineq-{:03}/giw'.format(ineq+1)]
+      del f2['dmft-last/ineq-{:03}/giw'.format(ineq+1)]
+      f2['dmft-last/ineq-{:03}/giw/value'.format(ineq+1)] = np.zeros_like(f2['dmft-last/ineq-{:03}/giw_unsymmetrized/value'.format(ineq+1)], dtype=np.complex128)
+      f2['dmft-last/ineq-{:03}/siw_unsymmetrized'.format(ineq+1)] = f2['dmft-last/ineq-{:03}/siw'.format(ineq+1)]
+      del f2['dmft-last/ineq-{:03}/siw'.format(ineq+1)]
+      f2['dmft-last/ineq-{:03}/siw/value'.format(ineq+1)] = np.zeros_like(f2['dmft-last/ineq-{:03}/siw_unsymmetrized/value'.format(ineq+1)], dtype=np.complex128)
+      for band in xrange(conf['Nbands'][ineq]):
+        for symband in conf['sym'][ineq][band]:
+          f2['dmft-last/ineq-{:03}/giw/value'.format(ineq+1)][band,:,:] += \
+            np.mean(f2['dmft-last/ineq-{:03}/giw_unsymmetrized/value'.format(ineq+1)][symband-1,:,:]/float(len(conf['sym'][ineq][band])), axis=0)
+          f2['dmft-last/ineq-{:03}/siw/value'.format(ineq+1)][band,:,:] += \
+            np.mean(f2['dmft-last/ineq-{:03}/siw_unsymmetrized/value'.format(ineq+1)][symband-1,:,:]/float(len(conf['sym'][ineq][band])), axis=0)
+    f2.close()
+  else: # 1freq_b, 2freq, 3freq
+    get_groups(**conf)
+    get_fbox(**conf)
 
+    try:
+      f2=h5py.File(conf['outfile'],'w-')
+    except IOError:
+      print 'File already exists.'
+      print 'Exiting.'
+      sys.exit(0)
 
-conf=ask_for_input()
-#conf={'nineq': 1, 'target': '3freq', 'sym_type': 'o', 'outfile': 'out.hdf5', 'Nbands': [3,3], 'infile': 'vertex_full_newformat.hdf5'}
-print conf
-check_sym(**conf)
-f1=h5py.File(conf['infile'],'r')
+    initialize_output(f1,f2,**conf)
 
-if conf['target']=='1freq_f': # we do this completely seperate since we only have to do sume numpy magic
-  copyfile(conf['infile'],conf['outfile'])
-  f2=h5py.File(conf['outfile'],'r+')
-  for ineq in xrange(conf['nineq']):
-    f2['dmft-last/ineq-{:03}/giw_unsymmetrized'.format(ineq+1)] = f2['dmft-last/ineq-{:03}/giw'.format(ineq+1)]
-    del f2['dmft-last/ineq-{:03}/giw'.format(ineq+1)]
-    f2['dmft-last/ineq-{:03}/giw/value'.format(ineq+1)] = np.zeros_like(f2['dmft-last/ineq-{:03}/giw_unsymmetrized/value'.format(ineq+1)], dtype=np.complex128)
-    f2['dmft-last/ineq-{:03}/siw_unsymmetrized'.format(ineq+1)] = f2['dmft-last/ineq-{:03}/siw'.format(ineq+1)]
-    del f2['dmft-last/ineq-{:03}/siw'.format(ineq+1)]
-    f2['dmft-last/ineq-{:03}/siw/value'.format(ineq+1)] = np.zeros_like(f2['dmft-last/ineq-{:03}/siw_unsymmetrized/value'.format(ineq+1)], dtype=np.complex128)
-    for band in xrange(conf['Nbands'][ineq]):
-      for symband in conf['sym'][ineq][band]:
-        f2['dmft-last/ineq-{:03}/giw/value'.format(ineq+1)][band,:,:] += \
-          np.mean(f2['dmft-last/ineq-{:03}/giw_unsymmetrized/value'.format(ineq+1)][symband-1,:,:]/float(len(conf['sym'][ineq][band])), axis=0)
-        f2['dmft-last/ineq-{:03}/siw/value'.format(ineq+1)][band,:,:] += \
-          np.mean(f2['dmft-last/ineq-{:03}/siw_unsymmetrized/value'.format(ineq+1)][symband-1,:,:]/float(len(conf['sym'][ineq][band])), axis=0)
-  f2.close()
-else: # 1freq_b, 2freq, 3freq
-  get_groups(**conf)
-  get_fbox(**conf)
-  f2=h5py.File(conf['outfile'],'w-')
-  initialize_output(f1,f2,**conf)
+    for ineq in xrange(conf['nineq']):
+      for ch in ['dens','magn']:
+          for gr in conf['groups'][ineq]:
+            action,symgroups=get_symgroups(ch,gr,conf['sym'][ineq],conf['Nbands'][ineq],**conf)
+            print 'group {},'.format(gr['group']),'channel: {},'.format(ch),'action: {},'.format(action),'{} equivaluent band groups:'.format(len(symgroups)),symgroups
+            read_and_add(f1,f2,ineq,gr['group'],ch,action,symgroups,**conf)
+            for i in symgroups:
+               print index2component_band(conf['Nbands'][ineq],4, i)
+    f2.close()
 
-  for ineq in xrange(conf['nineq']):
-    for ch in ['dens','magn']:
-        for gr in conf['groups'][ineq]:
-          action,symgroups=get_symgroups(ch,gr,conf['sym'][ineq],conf['Nbands'][ineq],**conf)
-          print 'group {},'.format(gr['group']),'channel: {},'.format(ch),'action: {},'.format(action),'{} equivaluent band groups:'.format(len(symgroups)),symgroups
-          read_and_add(f1,f2,ineq,gr['group'],ch,action,symgroups,**conf)
-          for i in symgroups:
-             print index2component_band(conf['Nbands'][ineq],4, i)
-  f2.close()
+  f1.close()
 
-f1.close()
+if __name__ == '__main__':
+  try:
+    if len(sys.argv) == 1:
+        # Ask for input if no command line arguments are given
+        conf = ask_for_input()
+    else:
+        # Otherwise determine "worm_group", "infile" and "outfile" from command line arguments
+        # and set the other conf parameters to default values
+        worm = sys.argv[1]
+        input_file = "g4iw.hdf5"
+        if len(sys.argv) >= 3:
+            input_file = sys.argv[2]
+        output_file = input_file.split(".")[0] + "_sym.hdf5"
+        conf={'nineq': 1, 'target': '3freq', 'sym_type': 'o', 'outfile': output_file, 'Nbands': [1,1], 'infile': input_file, 'sym': [[[1]]], 'worm_group': worm}
+    main(conf)
+  except KeyboardInterrupt:
+    print '\nKilled by user.'
+    print 'Exiting.'
+    sys.exit(0)
+  else:
+    print '\nDone.'
